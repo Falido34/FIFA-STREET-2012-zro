@@ -85,10 +85,16 @@ jobs:
         shell: pwsh
         run: |
           $tools = Join-Path $env:RUNNER_TEMP "fifa-tools"
-          New-Item -ItemType Directory -Force -Path "$tools/jdk","$tools/android-sdk","$tools/w64devkit" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$tools/jdk","$tools/android-sdk" | Out-Null
           New-Item -ItemType Junction -Path "$tools/jdk/jdk-17.0.20.1+1" -Target $env:JAVA_HOME | Out-Null
           New-Item -ItemType Junction -Path "$tools/android-sdk" -Target $env:ANDROID_HOME | Out-Null
-          Copy-Item "C:/msys64/mingw64/*" "$tools/w64devkit" -Recurse -Force
+          $mingw = "C:/msys64/mingw64"
+          foreach ($tool in @("bin/cmake.exe","bin/ninja.exe","bin/gcc.exe","bin/g++.exe")) {
+            if (!(Test-Path -LiteralPath (Join-Path $mingw $tool))) { throw "MSYS2 tool missing: $tool" }
+          }
+          $w64devkit = Join-Path $tools "w64devkit"
+          if (Test-Path -LiteralPath $w64devkit) { Remove-Item -LiteralPath $w64devkit -Recurse -Force }
+          New-Item -ItemType Junction -Path $w64devkit -Target $mingw | Out-Null
           "FIFA_TOOLS=$tools" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Build ReXGlue runtime and host generator
