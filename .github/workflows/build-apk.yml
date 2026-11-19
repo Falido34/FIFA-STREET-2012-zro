@@ -88,12 +88,14 @@ jobs:
           New-Item -ItemType Directory -Force -Path "$tools/jdk","$tools/android-sdk" | Out-Null
           New-Item -ItemType Junction -Path "$tools/jdk/jdk-17.0.20.1+1" -Target $env:JAVA_HOME | Out-Null
           New-Item -ItemType Junction -Path "$tools/android-sdk" -Target $env:ANDROID_HOME | Out-Null
-          $cmakeCommand = Get-Command cmake.exe -ErrorAction Stop
-          $mingwBin = Split-Path -Parent $cmakeCommand.Source
-          $mingw = Split-Path -Parent $mingwBin
+          $msys2cmd = Join-Path $env:RUNNER_TEMP "setup-msys2/msys2.cmd"
+          if (!(Test-Path -LiteralPath $msys2cmd)) { throw "MSYS2 launcher not found: $msys2cmd" }
+          $mingwBin = (& $msys2cmd -c "cygpath -w /mingw64/bin" | Select-Object -Last 1).Trim()
+          if ([string]::IsNullOrWhiteSpace($mingwBin) -or !(Test-Path -LiteralPath $mingwBin)) { throw "Could not resolve the MSYS2 MINGW64 bin directory: $mingwBin" }
           foreach ($tool in @("cmake.exe","ninja.exe","gcc.exe","g++.exe")) {
             if (!(Test-Path -LiteralPath (Join-Path $mingwBin $tool))) { throw "MSYS2 tool missing: $tool in $mingwBin" }
           }
+          $mingw = Split-Path -Parent $mingwBin
           $w64devkit = Join-Path $tools "w64devkit"
           if (Test-Path -LiteralPath $w64devkit) { Remove-Item -LiteralPath $w64devkit -Recurse -Force }
           New-Item -ItemType Junction -Path $w64devkit -Target $mingw | Out-Null
