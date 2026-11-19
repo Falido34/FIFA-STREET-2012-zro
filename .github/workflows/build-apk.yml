@@ -88,7 +88,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path "$tools/jdk","$tools/android-sdk" | Out-Null
           New-Item -ItemType Junction -Path "$tools/jdk/jdk-17.0.20.1+1" -Target $env:JAVA_HOME | Out-Null
           New-Item -ItemType Junction -Path "$tools/android-sdk" -Target $env:ANDROID_HOME | Out-Null
-          Copy-Item "C:/msys64/mingw64" "$tools/w64devkit" -Recurse -Force
+          Copy-Item "C:/msys64/mingw64/*" "$tools/w64devkit" -Recurse -Force
           "FIFA_TOOLS=$tools" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Build ReXGlue runtime and host generator
