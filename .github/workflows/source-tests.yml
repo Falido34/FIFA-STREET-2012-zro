@@ -1,0 +1,35 @@
+name: Android source tests
+
+on:
+  push:
+    branches: [main, "work/**"]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  extractor-tests:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Test Python XDVDFS inspector
+        run: python -m unittest discover -s android -p "test_inspect_game.py" -v
+
+      - name: Test Android Java ISO parser
+        run: python -m unittest discover -s android -p "test_public_iso.py" -v
