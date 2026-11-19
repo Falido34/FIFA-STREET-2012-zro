@@ -88,9 +88,11 @@ jobs:
           New-Item -ItemType Directory -Force -Path "$tools/jdk","$tools/android-sdk" | Out-Null
           New-Item -ItemType Junction -Path "$tools/jdk/jdk-17.0.20.1+1" -Target $env:JAVA_HOME | Out-Null
           New-Item -ItemType Junction -Path "$tools/android-sdk" -Target $env:ANDROID_HOME | Out-Null
-          $mingw = "C:/msys64/mingw64"
-          foreach ($tool in @("bin/cmake.exe","bin/ninja.exe","bin/gcc.exe","bin/g++.exe")) {
-            if (!(Test-Path -LiteralPath (Join-Path $mingw $tool))) { throw "MSYS2 tool missing: $tool" }
+          $cmakeCommand = Get-Command cmake.exe -ErrorAction Stop
+          $mingwBin = Split-Path -Parent $cmakeCommand.Source
+          $mingw = Split-Path -Parent $mingwBin
+          foreach ($tool in @("cmake.exe","ninja.exe","gcc.exe","g++.exe")) {
+            if (!(Test-Path -LiteralPath (Join-Path $mingwBin $tool))) { throw "MSYS2 tool missing: $tool in $mingwBin" }
           }
           $w64devkit = Join-Path $tools "w64devkit"
           if (Test-Path -LiteralPath $w64devkit) { Remove-Item -LiteralPath $w64devkit -Recurse -Force }
