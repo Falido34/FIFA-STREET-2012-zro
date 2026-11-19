@@ -10,8 +10,9 @@ La APK y su SHA-256 se distribuyen en [Releases](https://github.com/kurkobein112
 
 1. Instala `FIFA-STREET-0.1.apk` en un teléfono Android ARM64 con Vulkan y Android 8.0 o posterior.
 2. Selecciona tu propia ISO de **FIFA Street (2012), Xbox 360, región libre**. Edición comprobada: **Title ID `4541097B`, Media ID `78AA9072`**. La app verifica los ejecutables; una ISO de otra revisión o modificada puede ser rechazada.
-3. Deja espacio para la ISO y aproximadamente **4,7 GB adicionales** para extraer los datos. La ISO original no se modifica.
-4. Elige **Mali** o **Snapdragon / Adreno** y pulsa **JUGAR**.
+3. También puedes pulsar **IMPORTAR PASTA DO JOGO** y seleccionar la carpeta que contiene directamente `default.xex`, `fifadllzf.xex.dll`, `data0.big`, `data0.bh` y la carpeta `dlc`. La app copia los archivos a su almacenamiento privado y verifica los ejecutables antes de habilitar el juego.
+4. Para ISO, deja espacio para el archivo y aproximadamente **4,7 GB adicionales** para extraer los datos. La ISO original no se modifica.
+5. Elige **Mali** o **Snapdragon / Adreno** y pulsa **JUGAR**.
 
 No se distribuye la ISO ni los archivos de datos del juego. Los archivos de PS3 y los juegos FIFA Street 1/2 no son compatibles.
 
