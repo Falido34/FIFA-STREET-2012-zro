@@ -5,7 +5,6 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
-import android.webkit.MimeTypeMap;
 import java.io.*;
 import java.security.MessageDigest;
 import java.util.*;
@@ -78,6 +77,7 @@ public final class GameFolderImporter {
                 String name = cursor.getString(nameColumn);
                 validateName(name);
                 String relative = parent.isEmpty() ? name : parent + "/" + name;
+                progress.update("Copiando " + relative);
                 String key = relative.toLowerCase(Locale.ROOT);
                 if (!paths.add(key)) throw new IOException("Há nomes de arquivos duplicados: " + relative);
                 Uri child = DocumentsContract.buildDocumentUriUsingTree(tree, cursor.getString(idColumn));
