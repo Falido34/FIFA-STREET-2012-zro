@@ -34,6 +34,8 @@ New-Item -ItemType Directory -Path $work -Force | Out-Null
 if (!(Test-Path -LiteralPath "$source/.git")) {
     if (Test-Path -LiteralPath $source) { throw 'Source destination exists and is not a Git checkout.' }
     Invoke-Checked git @('clone', '--filter=blob:none', '--no-checkout', 'https://github.com/rexglue/rexglue-sdk.git', $source)
+    # Keep upstream LF blobs unchanged so pinned patch contexts remain valid on Windows.
+    Invoke-Checked git @('-C', $source, 'config', 'core.autocrlf', 'false')
     Invoke-Checked git @('-C', $source, '-c', 'core.longpaths=true', 'checkout', '--detach', $pin)
 }
 $head = (& git -C $source rev-parse HEAD).Trim()
