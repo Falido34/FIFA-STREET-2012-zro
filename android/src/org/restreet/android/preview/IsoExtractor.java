@@ -93,13 +93,16 @@ public final class IsoExtractor {
         // These are the exact executables used by the fixed ARM64 recompilation.
         String[][] expected = {
             {"default.xex", "f4902ab0a2515ca64675544852a0263ba429863dad13dc19b7c2d989c97aa2b1"},
-            {"fifadllzf.xex.dll", "9d2fb47c3caf279d55962f671afc5b8eb7a597717d44ccb5995dd002a3c26201"}
+            {"fifadllzf.xex.dll", "9d2fb47c3caf279d55962f671afc5b8eb7a597717d44ccb5995dd002a3c26201"},
+            {"dlc/dlc_FootballCompEng/dlc/FootballCompEng/FootballCompEngzf.xex.dll", ""}
         };
         for (String[] item : expected) {
             Entry found = null;
             for (Entry entry : entries) if (!entry.directory && entry.path.equalsIgnoreCase(item[0])) found = entry;
             if (found == null) throw new IOException("Falta " + item[0] + ". Selecciona FIFA Street (2012) para Xbox 360.");
-            try {
+            if (found.size < 4 || !Arrays.equals(read(found.offset, 4), new byte[] {'X', 'E', 'X', '2'}))
+                throw new IOException("Ejecutable XEX2 inválido: " + item[0] + ".");
+            if (!item[1].isEmpty()) try {
                 MessageDigest hash = MessageDigest.getInstance("SHA-256");
                 for (long at = 0; at < found.size;) {
                     byte[] chunk = read(found.offset + at, (int)Math.min(1024 * 1024, found.size - at));
