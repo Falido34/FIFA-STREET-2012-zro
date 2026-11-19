@@ -45,7 +45,7 @@ public final class MainActivity extends Activity {
         scroll.addView(content); root.addView(scroll,new LinearLayout.LayoutParams(0,-1,0.60f));
         TextView title = text("FIFA STREET", 30, 0xFFF4EEE0); title.setTypeface(Typeface.create("sans-serif-condensed",Typeface.BOLD)); content.addView(title);
         content.addView(text("0.1 · Android", 14, 0xFFD6B477));
-        TextView guide = text("Selecciona tu ISO: (FIFA Street 2012 · Xbox 360 · región libre · Media ID 78AA9072)",15,0xFFDEE4DF);
+        TextView guide = text("Selecione a ISO compatível ou importe a pasta do jogo (Xbox 360 · Title ID 4541097B · Media ID 78AA9072).",15,0xFFDEE4DF);
         guide.setPadding(0,dp(14),0,dp(8)); content.addView(guide);
         status = text("",14,0xFFDEE4DF); status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE); content.addView(status);
         progress = new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal); progress.setVisibility(View.GONE); content.addView(progress,new LinearLayout.LayoutParams(-1,dp(12)));
@@ -60,7 +60,7 @@ public final class MainActivity extends Activity {
             Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
             picker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
             try { startActivityForResult(picker, PICK_FOLDER); }
-            catch (android.content.ActivityNotFoundException e) { status.setText("No hay un selector de carpetas disponible en este teléfono."); }
+            catch (android.content.ActivityNotFoundException e) { status.setText("Não há um seletor de pastas disponível neste telefone."); }
         }); content.addView(folderButton);
         cancelButton = new Button(this); cancelButton.setText("CANCELAR EXTRACCIÓN"); cancelButton.setVisibility(View.GONE);
         cancelButton.setOnClickListener(v -> { cancelled=true; status.setText("Cancelando y retirando la extracción incompleta…"); }); content.addView(cancelButton);
