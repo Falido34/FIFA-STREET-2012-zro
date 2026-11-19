@@ -85,7 +85,7 @@ jobs:
         shell: pwsh
         run: |
           $tools = Join-Path $env:RUNNER_TEMP "fifa-tools"
-          New-Item -ItemType Directory -Force -Path "$tools/jdk","$tools/android-sdk" | Out-Null
+          New-Item -ItemType Directory -Force -Path "$tools/jdk","$tools/android-sdk","$tools/w64devkit" | Out-Null
           New-Item -ItemType Junction -Path "$tools/jdk/jdk-17.0.20.1+1" -Target $env:JAVA_HOME | Out-Null
           New-Item -ItemType Junction -Path "$tools/android-sdk" -Target $env:ANDROID_HOME | Out-Null
           Copy-Item "C:/msys64/mingw64/*" "$tools/w64devkit" -Recurse -Force
