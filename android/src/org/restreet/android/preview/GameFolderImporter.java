@@ -39,7 +39,7 @@ public final class GameFolderImporter {
     public static void importFolder(Context context, Uri tree, File destination, Progress progress) throws IOException {
         GameFolderImporter importer = new GameFolderImporter(context, destination, progress);
         if (destination.exists()) throw new IOException("La carpeta temporária já existe.");
-        if (!destination.mkdirs()) throw new IOException("No se pudo crear la carpeta temporal.");
+        if (!destination.mkdirs()) throw new IOException("Não foi possível criar a pasta temporária.");
         try {
             String rootId = DocumentsContract.getTreeDocumentId(tree);
             Uri root = DocumentsContract.buildDocumentUriUsingTree(tree, rootId);
@@ -115,8 +115,9 @@ public final class GameFolderImporter {
                 while ((read = in.read(buffer)) != -1) {
                     checkCancelled();
                     if (new StatFs(context.getFilesDir().getPath()).getAvailableBytes() < read + 64L * 1024 * 1024)
-                        throw new IOException("No hay espacio libre suficiente para importar la carpeta del juego.");
+                        throw new IOException("Não há espaço livre suficiente para importar a pasta do jogo.");
                     out.write(buffer, 0, read);
+                    progress.update("Copiando " + target.getName());
                 }
             }
         }
