@@ -27,7 +27,9 @@ public final class MainActivity extends Activity {
     private File data() { return new File(getFilesDir(), "GameData"); }
     private boolean gameReady() {
         return new File(data(), ".restreet-import-complete").isFile()
-                && new File(data(), "default.xex").isFile() && new File(data(), "fifadllzf.xex.dll").isFile();
+                && new File(data(), "default.xex").isFile()
+                && new File(data(), "fifadllzf.xex.dll").isFile()
+                && new File(data(), "dlc/dlc_FootballCompEng/dlc/FootballCompEng/FootballCompEngzf.xex.dll").isFile();
     }
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
