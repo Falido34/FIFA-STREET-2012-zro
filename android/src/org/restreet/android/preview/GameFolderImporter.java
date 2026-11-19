@@ -5,6 +5,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
 import android.provider.DocumentsContract;
+import android.os.StatFs;
 import java.io.*;
 import java.security.MessageDigest;
 import java.util.*;
@@ -26,9 +27,7 @@ public final class GameFolderImporter {
     private final Progress progress;
     private final Set<String> paths = new HashSet<>();
     private final Map<String, File> files = new HashMap<>();
-    private long copied;
     private int count;
-    private volatile boolean cancelled;
 
     private GameFolderImporter(Context context, File destination, Progress progress) {
         this.context = context.getApplicationContext();
@@ -39,8 +38,9 @@ public final class GameFolderImporter {
 
     public static void importFolder(Context context, Uri tree, File destination, Progress progress) throws IOException {
         GameFolderImporter importer = new GameFolderImporter(context, destination, progress);
+        if (destination.exists()) throw new IOException("La carpeta temporária já existe.");
+        if (!destination.mkdirs()) throw new IOException("No se pudo crear la carpeta temporal.");
         try {
-            if (destination.exists() || !destination.mkdirs()) throw new IOException("La carpeta temporária já existe.");
             String rootId = DocumentsContract.getTreeDocumentId(tree);
             Uri root = DocumentsContract.buildDocumentUriUsingTree(tree, rootId);
             importer.copyDirectory(tree, root, "");
@@ -114,8 +114,9 @@ public final class GameFolderImporter {
                 int read;
                 while ((read = in.read(buffer)) != -1) {
                     checkCancelled();
+                    if (new StatFs(context.getFilesDir().getPath()).getAvailableBytes() < read + 64L * 1024 * 1024)
+                        throw new IOException("No hay espacio libre suficiente para importar la carpeta del juego.");
                     out.write(buffer, 0, read);
-                    copied += read;
                 }
             }
         }
