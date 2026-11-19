@@ -16,9 +16,10 @@ import java.util.List;
 
 public final class MainActivity extends Activity {
     private static final int PICK_ISO = 42;
+    private static final int PICK_FOLDER = 43;
     private TextView status;
     private ProgressBar progress;
-    private Button importButton, playButton, cancelButton;
+    private Button importButton, folderButton, playButton, cancelButton;
     private Spinner gpu, controls;
     private volatile boolean cancelled;
     private volatile boolean importing;
@@ -54,6 +55,13 @@ public final class MainActivity extends Activity {
             try { startActivityForResult(picker,PICK_ISO); }
             catch (android.content.ActivityNotFoundException e) { status.setText("No hay un selector de archivos disponible en este teléfono."); }
         }); content.addView(importButton);
+        folderButton = new Button(this); folderButton.setText("IMPORTAR PASTA DO JOGO"); folderButton.setMinHeight(dp(48));
+        folderButton.setOnClickListener(v -> {
+            Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+            picker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
+            try { startActivityForResult(picker, PICK_FOLDER); }
+            catch (android.content.ActivityNotFoundException e) { status.setText("No hay un selector de carpetas disponible en este teléfono."); }
+        }); content.addView(folderButton);
         cancelButton = new Button(this); cancelButton.setText("CANCELAR EXTRACCIÓN"); cancelButton.setVisibility(View.GONE);
         cancelButton.setOnClickListener(v -> { cancelled=true; status.setText("Cancelando y retirando la extracción incompleta…"); }); content.addView(cancelButton);
         content.addView(label("Compatibilidad de GPU"));
@@ -80,15 +88,53 @@ public final class MainActivity extends Activity {
     private TextView label(String value) { TextView t=text(value,15,0xFFF4EEE0);t.setPadding(0,dp(16),0,dp(2));return t; }
     private void refresh() {
         boolean ready=gameReady();playButton.setEnabled(ready&&!importing);importButton.setEnabled(!importing&&!data().exists());
+        folderButton.setEnabled(!importing&&!data().exists());
         gpu.setEnabled(!importing);controls.setEnabled(!importing);
         if (!importing) status.setText(ready?"Juego importado.":data().exists()?"GameData está incompleto. Se conservó sin sobrescribir; revisa el almacenamiento de la app.":"");
     }
     @Override protected void onActivityResult(int request,int result,Intent intent) {
         super.onActivityResult(request,result,intent);
-        if(request!=PICK_ISO||result!=RESULT_OK||intent==null||intent.getData()==null||importing)return;
-        final Uri uri=intent.getData(); cancelled=false;importing=true;refresh();
+        if(result!=RESULT_OK||intent==null||intent.getData()==null||importing)return;
+        final Uri uri=intent.getData();
+        if(request==PICK_FOLDER) {
+            cancelled=false;importing=true;refresh();
+            progress.setVisibility(View.VISIBLE);progress.setIndeterminate(true);cancelButton.setVisibility(View.VISIBLE);getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            worker=new Thread(() -> importGameFolder(uri),"Game folder importer");worker.start();
+            return;
+        }
+        if(request!=PICK_ISO)return;
+        cancelled=false;importing=true;refresh();
         progress.setVisibility(View.VISIBLE);progress.setIndeterminate(true);cancelButton.setVisibility(View.VISIBLE);getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         worker=new Thread(() -> importIso(uri),"ISO extractor");worker.start();
+    }
+    private void importGameFolder(Uri uri) {
+        File staging=new File(getFilesDir(),"folder-stage-"+java.util.UUID.randomUUID());
+        String result;
+        try {
+            runOnUiThread(() -> status.setText("Lendo e verificando a pasta do jogo…"));
+            GameFolderImporter.importFolder(this,uri,staging,message -> {
+                if(cancelled||Thread.currentThread().isInterrupted())throw new IOException("Importação cancelada.");
+                runOnUiThread(() -> {if(!isDestroyed())status.setText(message);});
+            });
+            if(cancelled||Thread.currentThread().isInterrupted())throw new IOException("Importação cancelada.");
+            if(data().exists()||!staging.renameTo(data()))throw new IOException("Não foi possível salvar GameData. Os dados existentes foram preservados.");
+            result="Pasta importada e verificada. Já pode jogar.";
+        } catch(Exception e) {
+            result="Importação da pasta falhou: "+(e.getMessage()==null?e.getClass().getSimpleName():e.getMessage());
+            if(staging.exists())try { removeFolderStaging(staging); } catch(IOException cleanup) { android.util.Log.w("FifaFolder","Falha ao limpar pasta temporária",cleanup); }
+        }
+        final String message=result;
+        runOnUiThread(() -> {
+            importing=false;
+            if(isDestroyed())return;
+            progress.setVisibility(View.GONE);cancelButton.setVisibility(View.GONE);getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            refresh();status.setText(message);
+        });
+    }
+    private void removeFolderStaging(File stage) throws IOException {
+        File root=getFilesDir().getCanonicalFile();File target=stage.getCanonicalFile();
+        if(!root.equals(target.getParentFile())||!target.getName().startsWith("folder-stage-"))return;
+        removeOwned(target,root.getPath()+File.separator);
     }
     private void importIso(Uri uri) {
         File staging=null, spool=null;
