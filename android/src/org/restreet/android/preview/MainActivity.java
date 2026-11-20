@@ -17,9 +17,10 @@ import java.util.List;
 public final class MainActivity extends Activity {
     private static final int PICK_ISO = 42;
     private static final int PICK_FOLDER = 43;
+    private static final int PICK_ADRENO_DRIVER = 44;
     private TextView status;
     private ProgressBar progress;
-    private Button importButton, folderButton, playButton, cancelButton;
+    private Button importButton, folderButton, playButton, cancelButton, driverButton, systemDriverButton;
     private Spinner gpu, controls;
     private volatile boolean cancelled;
     private volatile boolean importing;
@@ -68,6 +69,20 @@ public final class MainActivity extends Activity {
         gpu = new Spinner(this); ArrayAdapter<GpuProfile> profiles = new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,GpuProfile.values());
         profiles.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);gpu.setAdapter(profiles);gpu.setContentDescription("Compatibilidad de GPU");
         gpu.setSelection(GpuProfile.fromName(getPreferences(MODE_PRIVATE).getString("gpu_profile","MALI")).ordinal());content.addView(gpu,new LinearLayout.LayoutParams(-1,dp(48)));
+        content.addView(label("Driver Vulkan Adreno (opcional)"));
+        TextView driverStatus=text("",13,0xFFBDCFC5);driverStatus.setText(AdrenoDriverManager.selectedLabel(this));content.addView(driverStatus);
+        driverButton=new Button(this);driverButton.setText("IMPORTAR DRIVER ADRENO (ZIP)");driverButton.setMinHeight(dp(48));
+        driverButton.setOnClickListener(v->{
+            if(Build.VERSION.SDK_INT<28){status.setText("Adreno Tools requer Android 9 ou superior.");return;}
+            Intent picker=new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("application/zip");
+            try{startActivityForResult(picker,PICK_ADRENO_DRIVER);}
+            catch(android.content.ActivityNotFoundException e){status.setText("Não há seletor de arquivos disponível.");}
+        });content.addView(driverButton);
+        systemDriverButton=new Button(this);systemDriverButton.setText("USAR DRIVER ORIGINAL DO SISTEMA");
+        systemDriverButton.setOnClickListener(v->{
+            try{AdrenoDriverManager.useSystem(this);driverStatus.setText(AdrenoDriverManager.selectedLabel(this));status.setText("Driver do sistema selecionado. A alteração vale ao abrir o jogo novamente.");}
+            catch(IOException e){status.setText("Não foi possível trocar o driver: "+e.getMessage());}
+        });content.addView(systemDriverButton);
         content.addView(label("Estilo de controles"));
         controls = new Spinner(this);ArrayAdapter<String> styles = new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,TouchControls.STYLES);
         styles.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);controls.setAdapter(styles);controls.setContentDescription("Estilo de controles táctiles");
@@ -89,13 +104,25 @@ public final class MainActivity extends Activity {
     private void refresh() {
         boolean ready=gameReady();playButton.setEnabled(ready&&!importing);importButton.setEnabled(!importing&&!data().exists());
         folderButton.setEnabled(!importing&&!data().exists());
-        gpu.setEnabled(!importing);controls.setEnabled(!importing);
+        gpu.setEnabled(!importing);controls.setEnabled(!importing);\n        if(driverButton!=null)driverButton.setEnabled(!importing&&Build.VERSION.SDK_INT>=28);\n        if(systemDriverButton!=null)systemDriverButton.setEnabled(!importing);
         if (!importing) status.setText(ready?"Juego importado.":data().exists()?"GameData está incompleto. Se conservó sin sobrescribir; revisa el almacenamiento de la app.":"");
     }
     @Override protected void onActivityResult(int request,int result,Intent intent) {
         super.onActivityResult(request,result,intent);
         if(result!=RESULT_OK||intent==null||intent.getData()==null||importing)return;
         final Uri uri=intent.getData();
+        if(request==PICK_ADRENO_DRIVER) {
+            cancelled=false;importing=true;refresh();
+            progress.setVisibility(View.VISIBLE);progress.setIndeterminate(true);cancelButton.setVisibility(View.VISIBLE);getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            worker=new Thread(()->{
+                String message;
+                try { String installed=AdrenoDriverManager.importZip(this,uri);message="Driver importado: "+installed+". Feche e abra o jogo novamente para carregar."; }
+                catch(Exception e){message="Falha ao importar driver: "+(e.getMessage()==null?e.getClass().getSimpleName():e.getMessage());}
+                final String result=message;
+                runOnUiThread(()->{importing=false;if(isDestroyed())return;progress.setVisibility(View.GONE);cancelButton.setVisibility(View.GONE);getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);refresh();status.setText(result);});
+            },"Adreno driver importer");worker.start();
+            return;
+        }
         if(request==PICK_FOLDER) {
             cancelled=false;importing=true;refresh();
             progress.setVisibility(View.VISIBLE);progress.setIndeterminate(true);cancelButton.setVisibility(View.VISIBLE);getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
