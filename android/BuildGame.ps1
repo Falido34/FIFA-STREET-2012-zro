@@ -17,5 +17,5 @@ foreach ($name in @('main.cpp','fifastreet_app.h','stubs.cpp','native_libc_hooks
 }
 & $cmake -S $game -B $build -G Ninja "-DCMAKE_MAKE_PROGRAM=$ninja" "-DCMAKE_TOOLCHAIN_FILE=$ndk/build/cmake/android.toolchain.cmake" -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-26 -DANDROID_STL=c++_shared -DCMAKE_BUILD_TYPE=Release "-DREXSDK_DIR=$source" "-DREXGLUE_HOST_CODEGEN_EXECUTABLE=$Generator" "-DREXGLUE_OUTPUT_DIRECTORY=$build/runtime" "-DREX_ADRENOTOOLS_SOURCE_DIR=$(Join-Path $repo '.android-work/adrenotools')" -DREXGLUE_USE_D3D12=OFF -DREXGLUE_USE_VULKAN=ON -DREXGLUE_ENABLE_TRACY=OFF -DREXGLUE_ENABLE_PERF_COUNTERS=OFF -DREXGLUE_BUILD_TESTS=OFF
 if ($LASTEXITCODE -ne 0) { throw 'Android configuration failed' }
-& $cmake --build $build --target fifastreet --parallel $Jobs
+& $cmake --build $build --target fifastreet main_hook --parallel $Jobs
 if ($LASTEXITCODE -ne 0) { throw 'Android compilation failed' }
