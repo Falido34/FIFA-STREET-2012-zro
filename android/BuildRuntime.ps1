@@ -40,12 +40,12 @@ if (!(Test-Path -LiteralPath "$source/.git")) {
 }
 $head = (& git -C $source rev-parse HEAD).Trim()
 if ($LASTEXITCODE -ne 0 -or $head -ne $pin) { throw "ReXGlue must be at pinned commit $pin. Existing checkout was preserved." }
-& git -C $source apply --reverse --check $androidPatch 2>$null
+& git -C $source -c core.whitespace=cr-at-eol apply --ignore-space-change --ignore-whitespace --reverse --check $androidPatch 2>$null
 if ($LASTEXITCODE -ne 0) {
-    Invoke-Checked git @('-C', $source, 'apply', '--check', $gamePatch)
-    Invoke-Checked git @('-C', $source, 'apply', '--whitespace=nowarn', $gamePatch)
-    Invoke-Checked git @('-C', $source, 'apply', '--check', $androidPatch)
-    Invoke-Checked git @('-C', $source, 'apply', $androidPatch)
+    Invoke-Checked git @('-C', $source, '-c', 'core.whitespace=cr-at-eol', 'apply', '--ignore-space-change', '--ignore-whitespace', '--check', $gamePatch)
+    Invoke-Checked git @('-C', $source, '-c', 'core.whitespace=cr-at-eol', 'apply', '--ignore-space-change', '--ignore-whitespace', '--whitespace=nowarn', $gamePatch)
+    Invoke-Checked git @('-C', $source, '-c', 'core.whitespace=cr-at-eol', 'apply', '--ignore-space-change', '--ignore-whitespace', '--check', $androidPatch)
+    Invoke-Checked git @('-C', $source, '-c', 'core.whitespace=cr-at-eol', 'apply', '--ignore-space-change', '--ignore-whitespace', $androidPatch)
 }
 & "$PSScriptRoot/ApplyPerformancePatches.ps1" -Source $source
 $modules = @('cli11', 'libmspack', 'FFmpeg', 'tomlplusplus', 'simde', 'xxHash', 'spdlog', 'fmt', 'utfcpp', 'imgui', 'sdl3', 'vulkan-headers', 'vulkan-memory-allocator', 'spirv-headers', 'spirv-tools', 'glslang', 'o1heap', 'inja')
