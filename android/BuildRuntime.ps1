@@ -13,15 +13,6 @@ if (!$SdkRoot) { $SdkRoot = Join-Path $ToolsRoot 'android-sdk' }
 if (!$NdkRoot) { $NdkRoot = Join-Path $SdkRoot 'ndk/28.2.13676358' }
 if (!$CMake) { $CMake = Join-Path $ToolsRoot 'w64devkit/bin/cmake.exe' }
 if (!$Ninja) { $Ninja = Join-Path $ToolsRoot 'w64devkit/bin/ninja.exe' }
-if (!(Test-Path -LiteralPath "$adrenoSource/.git")) {
-    if (Test-Path -LiteralPath $adrenoSource) { throw 'Adreno Tools source destination exists and is not a Git checkout.' }
-    Invoke-Checked git @('clone', '--filter=blob:none', '--no-checkout', 'https://github.com/bylaws/libadrenotools.git', $adrenoSource)
-    Invoke-Checked git @('-C', $adrenoSource, 'config', 'core.autocrlf', 'false')
-    Invoke-Checked git @('-C', $adrenoSource, '-c', 'core.longpaths=true', 'checkout', '--detach', $adrenoPin)
-    Invoke-Checked git @('-C', $adrenoSource, '-c', 'core.longpaths=true', 'submodule', 'update', '--init', '--depth', '1', '--jobs', "$Jobs")
-}
-$adrenoHead = (& git -C $adrenoSource rev-parse HEAD).Trim()
-if ($LASTEXITCODE -ne 0 -or $adrenoHead -ne $adrenoPin) { throw "Adreno Tools must be at pinned commit $adrenoPin." }
 $repo = Split-Path $PSScriptRoot -Parent
 $work = Join-Path $repo '.android-work'
 $source = Join-Path $work 'rexglue'
@@ -43,6 +34,15 @@ function Invoke-Checked([string]$Tool, [string[]]$Arguments) {
     if ($LASTEXITCODE -ne 0) { throw "$Tool failed with exit code $LASTEXITCODE" }
 }
 New-Item -ItemType Directory -Path $work -Force | Out-Null
+if (!(Test-Path -LiteralPath "$adrenoSource/.git")) {
+    if (Test-Path -LiteralPath $adrenoSource) { throw 'Adreno Tools source destination exists and is not a Git checkout.' }
+    Invoke-Checked git @('clone', '--filter=blob:none', '--no-checkout', 'https://github.com/bylaws/libadrenotools.git', $adrenoSource)
+    Invoke-Checked git @('-C', $adrenoSource, 'config', 'core.autocrlf', 'false')
+    Invoke-Checked git @('-C', $adrenoSource, '-c', 'core.longpaths=true', 'checkout', '--detach', $adrenoPin)
+    Invoke-Checked git @('-C', $adrenoSource, '-c', 'core.longpaths=true', 'submodule', 'update', '--init', '--depth', '1', '--jobs', "$Jobs")
+}
+$adrenoHead = (& git -C $adrenoSource rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or $adrenoHead -ne $adrenoPin) { throw "Adreno Tools must be at pinned commit $adrenoPin." }
 if (!(Test-Path -LiteralPath "$source/.git")) {
     if (Test-Path -LiteralPath $source) { throw 'Source destination exists and is not a Git checkout.' }
     Invoke-Checked git @('clone', '--filter=blob:none', '--no-checkout', 'https://github.com/rexglue/rexglue-sdk.git', $source)
