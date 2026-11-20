@@ -104,9 +104,12 @@ public final class MainActivity extends Activity {
     private TextView text(String value,int size,int color) { TextView t=new TextView(this);t.setText(value);t.setTextSize(size);t.setTextColor(color);return t; }
     private TextView label(String value) { TextView t=text(value,15,0xFFF4EEE0);t.setPadding(0,dp(16),0,dp(2));return t; }
     private void refresh() {
-        boolean ready=gameReady();playButton.setEnabled(ready&&!importing);\n        if(driverStatus!=null)driverStatus.setText(AdrenoDriverManager.selectedLabel(this));importButton.setEnabled(!importing&&!data().exists());
+        boolean ready=gameReady();playButton.setEnabled(ready&&!importing);
+        if(driverStatus!=null)driverStatus.setText(AdrenoDriverManager.selectedLabel(this));importButton.setEnabled(!importing&&!data().exists());
         folderButton.setEnabled(!importing&&!data().exists());
-        gpu.setEnabled(!importing);controls.setEnabled(!importing);\n        if(driverButton!=null)driverButton.setEnabled(!importing&&Build.VERSION.SDK_INT>=28);\n        if(systemDriverButton!=null)systemDriverButton.setEnabled(!importing);
+        gpu.setEnabled(!importing);controls.setEnabled(!importing);
+        if(driverButton!=null)driverButton.setEnabled(!importing&&Build.VERSION.SDK_INT>=28);
+        if(systemDriverButton!=null)systemDriverButton.setEnabled(!importing);
         if (!importing) status.setText(ready?"Juego importado.":data().exists()?"GameData está incompleto. Se conservó sin sobrescribir; revisa el almacenamiento de la app.":"");
     }
     @Override protected void onActivityResult(int request,int result,Intent intent) {
