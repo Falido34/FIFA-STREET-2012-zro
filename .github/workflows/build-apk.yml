@@ -21,7 +21,41 @@ jobs:
       - name: Checkout source
         uses: actions/checkout@v4
 
+      - name: Detect native build inputs
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            native:
+              - 'patches/**'
+              - 'game-template/**'
+              - 'android/native/**'
+              - 'android/rexglue-*.patch'
+              - 'android/BuildRuntime.ps1'
+              - 'android/ApplyPerformancePatches.ps1'
+              - 'android/BuildHostGenerator.ps1'
+              - 'android/BuildGame.ps1'
+              - 'android/GenerateGame.ps1'
+              - 'android/ffmpeg-mingw.patch'
+
+      # Keep generated game modules and native CMake outputs so Java/UI-only
+      # changes can package a fresh APK without recompiling ReXGlue or the game.
+      - name: Cache ReXGlue and generated native game outputs
+        id: native-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            .android-work/rexglue
+            .android-work/build-rex-arm64
+            .android-work/build-codegen-gcc
+            .android-work/build-game-arm64
+            .android-work/game
+          key: ${{ runner.os }}-rexglue-c94f5ebd-v2-${{ hashFiles('patches/**', 'game-template/**', 'android/native/**', 'android/rexglue-*.patch', 'android/BuildRuntime.ps1', 'android/ApplyPerformancePatches.ps1', 'android/BuildHostGenerator.ps1', 'android/BuildGame.ps1', 'android/GenerateGame.ps1', 'android/ffmpeg-mingw.patch') }}
+          restore-keys: |
+            ${{ runner.os }}-rexglue-c94f5ebd-v2-
+
       - name: Require private game-files access token
+        if: steps.changes.outputs.native == 'true' || steps.native-cache.outputs.cache-hit != 'true'
         shell: pwsh
         env:
           GAME_FILES_TOKEN: ${{ secrets.GAME_FILES_TOKEN }}
@@ -31,6 +65,7 @@ jobs:
           }
 
       - name: Download and validate game modules
+        if: steps.changes.outputs.native == 'true' || steps.native-cache.outputs.cache-hit != 'true'
         shell: pwsh
         env:
           GAME_FILES_TOKEN: ${{ secrets.GAME_FILES_TOKEN }}
@@ -78,6 +113,7 @@ jobs:
           sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0" "ndk;28.2.13676358"
 
       - name: Set up MinGW GCC, CMake and Ninja
+        if: steps.changes.outputs.native == 'true' || steps.native-cache.outputs.cache-hit != 'true'
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
@@ -85,6 +121,7 @@ jobs:
           install: mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja
 
       - name: Prepare the exact tool paths expected by project scripts
+        if: steps.changes.outputs.native == 'true' || steps.native-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: |
           $tools = Join-Path $env:RUNNER_TEMP "fifa-tools"
@@ -104,25 +141,13 @@ jobs:
           New-Item -ItemType Junction -Path $w64devkit -Target $mingw | Out-Null
           "FIFA_TOOLS=$tools" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      # Preserve the pinned ReXGlue checkout, submodules and CMake outputs between runs.
-      # Patch hashes invalidate incompatible caches; the restore prefix still allows
-      # incremental rebuilding after a patch-only change.
-      - name: Cache ReXGlue source and native build outputs
-        uses: actions/cache@v4
-        with:
-          path: |
-            .android-work/rexglue
-            .android-work/build-rex-arm64
-            .android-work/build-codegen-gcc
-          key: ${{ runner.os }}-rexglue-c94f5ebd-${{ hashFiles('patches/**', 'android/rexglue-*.patch', 'android/BuildRuntime.ps1', 'android/ApplyPerformancePatches.ps1', 'android/BuildHostGenerator.ps1') }}
-          restore-keys: |
-            ${{ runner.os }}-rexglue-c94f5ebd-
-
       - name: Build ReXGlue runtime and host generator
+        if: steps.changes.outputs.native == 'true' || steps.native-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: ./android/BuildHostGenerator.ps1 -ToolsRoot "$env:FIFA_TOOLS" -Jobs 4
 
       - name: Generate FIFA Street modules and compile ARM64 Vulkan libraries
+        if: steps.changes.outputs.native == 'true' || steps.native-cache.outputs.cache-hit != 'true'
         shell: pwsh
         run: ./android/BuildGame.ps1 -ToolsRoot "$env:FIFA_TOOLS" -Jobs 4
 
