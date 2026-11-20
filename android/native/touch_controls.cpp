@@ -19,7 +19,11 @@ extern "C" JNIEXPORT jboolean JNICALL
 Java_org_restreet_android_preview_TouchControls_connect(JNIEnv*, jclass) {
   std::lock_guard lock(mutex);
   if (joystick) return true;
-  if (!(SDL_WasInit(SDL_INIT_GAMEPAD) & SDL_INIT_GAMEPAD)) return false;
+  // ReXGlue may initialize SDL without the gamepad subsystem. Start it here so
+  // the virtual controller is registered before the first touch event.
+  if (!(SDL_WasInit(SDL_INIT_GAMEPAD) & SDL_INIT_GAMEPAD)) {
+    if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) return false;
+  }
   SDL_VirtualJoystickDesc desc;
   SDL_INIT_INTERFACE(&desc);
   desc.type = SDL_JOYSTICK_TYPE_GAMEPAD;
