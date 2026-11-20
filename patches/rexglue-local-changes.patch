@@ -7274,11 +7274,11 @@ index c10694c..2e6bceb 100644
 +  state.ControlMask =
 +      PROCESS_POWER_THROTTLING_EXECUTION_SPEED | PROCESS_POWER_THROTTLING_IGNORE_TIMER_RESOLUTION;
 +  state.StateMask = 0;
-+  using SetProcessInformationFn = BOOL(WINAPI*)(HANDLE, int, LPVOID, DWORD);
-  if (auto set_process_information = reinterpret_cast<SetProcessInformationFn>(
-          GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "SetProcessInformation"))) {
-    set_process_information(GetCurrentProcess(), 4, &state, sizeof(state));
-  }
+++  using SetProcessInformationFn = BOOL(WINAPI*)(HANDLE, int, LPVOID, DWORD);
++  if (auto set_process_information = reinterpret_cast<SetProcessInformationFn>(
++          GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "SetProcessInformation"))) {
++    set_process_information(GetCurrentProcess(), 4, &state, sizeof(state));
++  }
 +#endif
 +}
 +
