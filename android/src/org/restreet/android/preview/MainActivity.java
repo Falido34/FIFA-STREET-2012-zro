@@ -123,8 +123,8 @@ public final class MainActivity extends Activity {
                 String message;boolean installedOk=false;
                 try { String installed=AdrenoDriverManager.importZip(this,uri);getPreferences(MODE_PRIVATE).edit().putString("gpu_profile",GpuProfile.ADRENO.name()).apply();installedOk=true;message="Driver importado: "+installed+". Perfil Adreno selecionado; feche e abra o jogo novamente para carregar."; }
                 catch(Exception e){message="Falha ao importar driver: "+(e.getMessage()==null?e.getClass().getSimpleName():e.getMessage());}
-                final String result=message;final boolean selectAdreno=installedOk;
-                runOnUiThread(()->{importing=false;if(isDestroyed())return;if(selectAdreno)gpu.setSelection(GpuProfile.ADRENO.ordinal());progress.setVisibility(View.GONE);cancelButton.setVisibility(View.GONE);getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);refresh();status.setText(result);});
+                final String importMessage=message;final boolean selectAdreno=installedOk;
+                runOnUiThread(()->{importing=false;if(isDestroyed())return;if(selectAdreno)gpu.setSelection(GpuProfile.ADRENO.ordinal());progress.setVisibility(View.GONE);cancelButton.setVisibility(View.GONE);getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);refresh();status.setText(importMessage);});
             },"Adreno driver importer");worker.start();
             return;
         }
