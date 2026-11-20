@@ -9,6 +9,7 @@ public final class GameActivity extends SDLActivity {
         try {
             android.system.Os.setenv("REX_NATIVE_LIBC_HOOKS","1",true);
             android.system.Os.setenv("REX_ADRENO_HOOK_DIR",getApplicationInfo().nativeLibraryDir,true);
+            android.system.Os.setenv("REX_ADRENO_TMP_DIR",getFilesDir().getAbsolutePath(),true);
             java.io.File selected=new java.io.File(getFilesDir(),"gpu-drivers/active.txt");
             if(selected.isFile()) {
                 try(java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.FileReader(selected))) {
