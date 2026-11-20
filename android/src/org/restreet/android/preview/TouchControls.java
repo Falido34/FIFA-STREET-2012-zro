@@ -130,8 +130,8 @@ public final class TouchControls extends android.widget.RelativeLayout implement
         handler.removeCallbacks(retry); releaseAll();
         for (PadButton b : buttons) b.setVisibility(VISIBLE);
         for (Stick s : sticks) s.setVisibility(VISIBLE);
-        if (physical) state.setText("Mando conectado · controles tácteis ativos");
-        else if (active) handler.post(retry);
+        if (physical) state.setText("Mando conectado · controles táteis ativos");
+        if (active) handler.post(retry);
     }
     @Override public void onInputDeviceAdded(int id) { refreshHardware(); }
     @Override public void onInputDeviceRemoved(int id) { refreshHardware(); }
