@@ -2,7 +2,7 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 0000000..0000000 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -340,6 +340,17 @@ add_subdirectory(src/kernel)
+@@ -340,7 +340,17 @@ add_subdirectory(src/kernel)
  add_subdirectory(src/codegen)
  add_subdirectory(src/rexglue)
  
@@ -23,7 +23,7 @@ diff --git a/include/rex/ui/vulkan/instance.h b/include/rex/ui/vulkan/instance.h
 index 0000000..0000000 100644
 --- a/include/rex/ui/vulkan/instance.h
 +++ b/include/rex/ui/vulkan/instance.h
-@@ -139,6 +139,9 @@ class VulkanInstance {
+@@ -139,7 +139,11 @@ class VulkanInstance {
  
    rex::platform::DynamicLibrary loader_;
  
@@ -51,7 +51,7 @@ index 0000000..0000000 100644
  #include <rex/cvar.h>
  #include <rex/logging.h>
  #include <rex/platform.h>
-@@ -39,6 +45,25 @@ std::unique_ptr<VulkanInstance> VulkanInstance::Create(const bool with_surface,
+@@ -39,5 +45,32 @@ std::unique_ptr<VulkanInstance> VulkanInstance::Create(const bool with_surface,
  
    bool functions_loaded = true;
    bool loader_loaded = false;
@@ -84,7 +84,7 @@ index 0000000..0000000 100644
 +#endif
  #if REX_PLATFORM_MAC
    const MacOSVulkanRuntimePaths macos_runtime_paths = DetectMacOSVulkanRuntimePaths();
-@@ -70,13 +95,20 @@ std::unique_ptr<VulkanInstance> VulkanInstance::Create(const bool with_surface,
+@@ -70,17 +95,26 @@ std::unique_ptr<VulkanInstance> VulkanInstance::Create(const bool with_surface,
    }
  #else
 -  loader_loaded = vulkan_instance->loader_.Load(platform::lib_names::kVulkanLoader);
@@ -112,7 +112,7 @@ index 0000000..0000000 100644
    if (!functions_loaded) {
      REXLOG_ERROR("Failed to get Vulkan loader function pointers");
      return nullptr;
-@@ -430,7 +462,13 @@ VulkanInstance::~VulkanInstance() {
+@@ -430,5 +462,13 @@ VulkanInstance::~VulkanInstance() {
      functions_.vkDestroyInstance(instance_, nullptr);
    }
  
