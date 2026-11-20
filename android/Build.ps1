@@ -22,8 +22,11 @@ function Checked([string]$Tool,[string[]]$Arguments) {
 foreach($path in @($work,"$work/classes","$work/dex","$work/lib/arm64-v8a","$repo/dist")){
     New-Item -ItemType Directory -Force -Path $path | Out-Null
 }
+$hookMain = @(Get-ChildItem -LiteralPath $game -Filter 'libmain_hook.so' -File -Recurse | Select-Object -First 1)
+$hookImpl = @(Get-ChildItem -LiteralPath $game -Filter 'libhook_impl.so' -File -Recurse | Select-Object -First 1)
+if (!$hookMain -or !$hookImpl) { throw 'Adreno Tools hook libraries are missing. Re-run BuildGame.ps1.' }
 $libraries=@("$game/libfifastreet.so","$game/libfifastreet_fifadllzf_xex.so","$game/libfifastreet_FootballCompEngzf_xex.so",
-    "$runtime/librexruntime.so","$runtime/librexgpu-xenos.so", "$ndk/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so", "$repo/.android-work/build-game-arm64/adrenotools/lib/libmain_hook.so", "$repo/.android-work/build-game-arm64/adrenotools/lib/libhook_impl.so")
+    "$runtime/librexruntime.so","$runtime/librexgpu-xenos.so", "$ndk/toolchains/llvm/prebuilt/windows-x86_64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so", $hookMain[0].FullName, $hookImpl[0].FullName)
 foreach($library in $libraries){if(!(Test-Path -LiteralPath $library)){throw "Run BuildGame.ps1 first: missing $library"}}
 $clang=Join-Path $ndk 'toolchains/llvm/prebuilt/windows-x86_64/bin/aarch64-linux-android26-clang++.cmd'
 Checked $clang @('-std=c++17','-O2','-fPIC','-shared','-Wall','-Wextra','-Werror','-Wl,-z,max-page-size=16384','-Wl,--no-undefined','-Wl,-soname,libtouchcontrols.so',
