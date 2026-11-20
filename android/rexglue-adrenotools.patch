@@ -54,7 +54,7 @@ index 0000000..0000000 100644
  #include <rex/cvar.h>
  #include <rex/logging.h>
  #include <rex/platform.h>
-@@ -39,5 +45,32 @@ std::unique_ptr<VulkanInstance> VulkanInstance::Create(const bool with_surface,
+@@ -39,5 +45,33 @@ std::unique_ptr<VulkanInstance> VulkanInstance::Create(const bool with_surface,
  
    bool functions_loaded = true;
    bool loader_loaded = false;
@@ -62,10 +62,11 @@ index 0000000..0000000 100644
 +  const char* custom_driver_dir = std::getenv("REX_ADRENO_DRIVER_DIR");
 +  const char* custom_driver_name = std::getenv("REX_ADRENO_DRIVER_NAME");
 +  const char* hook_library_dir = std::getenv("REX_ADRENO_HOOK_DIR");
++  const char* tmp_library_dir = std::getenv("REX_ADRENO_TMP_DIR");
 +  if (custom_driver_dir && custom_driver_name && hook_library_dir &&
 +      custom_driver_dir[0] && custom_driver_name[0] && hook_library_dir[0]) {
 +    vulkan_instance->adrenotools_loader_ = adrenotools_open_libvulkan(
-+        RTLD_NOW | RTLD_LOCAL, ADRENOTOOLS_DRIVER_CUSTOM, nullptr, hook_library_dir,
++        RTLD_NOW | RTLD_LOCAL, ADRENOTOOLS_DRIVER_CUSTOM, tmp_library_dir, hook_library_dir,
 +        custom_driver_dir, custom_driver_name, nullptr, nullptr);
 +    if (vulkan_instance->adrenotools_loader_) {
 +      ifn.vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(
