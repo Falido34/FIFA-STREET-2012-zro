@@ -13,9 +13,21 @@ if (!$SdkRoot) { $SdkRoot = Join-Path $ToolsRoot 'android-sdk' }
 if (!$NdkRoot) { $NdkRoot = Join-Path $SdkRoot 'ndk/28.2.13676358' }
 if (!$CMake) { $CMake = Join-Path $ToolsRoot 'w64devkit/bin/cmake.exe' }
 if (!$Ninja) { $Ninja = Join-Path $ToolsRoot 'w64devkit/bin/ninja.exe' }
+if (!(Test-Path -LiteralPath "$adrenoSource/.git")) {
+    if (Test-Path -LiteralPath $adrenoSource) { throw 'Adreno Tools source destination exists and is not a Git checkout.' }
+    Invoke-Checked git @('clone', '--filter=blob:none', '--no-checkout', 'https://github.com/bylaws/libadrenotools.git', $adrenoSource)
+    Invoke-Checked git @('-C', $adrenoSource, 'config', 'core.autocrlf', 'false')
+    Invoke-Checked git @('-C', $adrenoSource, '-c', 'core.longpaths=true', 'checkout', '--detach', $adrenoPin)
+    Invoke-Checked git @('-C', $adrenoSource, '-c', 'core.longpaths=true', 'submodule', 'update', '--init', '--depth', '1', '--jobs', "$Jobs")
+}
+$adrenoHead = (& git -C $adrenoSource rev-parse HEAD).Trim()
+if ($LASTEXITCODE -ne 0 -or $adrenoHead -ne $adrenoPin) { throw "Adreno Tools must be at pinned commit $adrenoPin." }
 $repo = Split-Path $PSScriptRoot -Parent
 $work = Join-Path $repo '.android-work'
 $source = Join-Path $work 'rexglue'
+$adrenoSource = Join-Path $work 'adrenotools'
+$adrenoPin = '8fae8ce254dfc1344527e05301e43f37dea2df80'
+$adrenoPatch = Join-Path $PSScriptRoot 'rexglue-adrenotools.patch'
 $build = Join-Path $work 'build-rex-arm64'
 $pin = 'c94f5ebdcb3c9d1a460ca48e04f9758448f8d518'
 $gamePatch = Join-Path $repo 'patches/rexglue-local-changes.patch'
@@ -23,7 +35,7 @@ $androidPatch = Join-Path $PSScriptRoot 'rexglue-android.patch'
 $performancePatch = Join-Path $PSScriptRoot 'rexglue-performance.patch'
 $mobilePatch = Join-Path $PSScriptRoot 'rexglue-mobile.patch'
 $shaderPatch = Join-Path $PSScriptRoot 'rexglue-shader-opt.patch'
-foreach ($path in @($CMake, $Ninja, "$NdkRoot/build/cmake/android.toolchain.cmake", $gamePatch, $androidPatch, $performancePatch, $mobilePatch, $shaderPatch)) {
+foreach ($path in @($CMake, $Ninja, "$NdkRoot/build/cmake/android.toolchain.cmake", $gamePatch, $androidPatch, $performancePatch, $mobilePatch, $shaderPatch, $adrenoPatch)) {
     if (!(Test-Path -LiteralPath $path)) { throw "Missing prerequisite: $path. No software was installed." }
 }
 function Invoke-Checked([string]$Tool, [string[]]$Arguments) {
@@ -47,10 +59,15 @@ if ($LASTEXITCODE -ne 0) {
     Invoke-Checked git @('-C', $source, '-c', 'core.whitespace=cr-at-eol', 'apply', '--ignore-space-change', '--ignore-whitespace', '--check', $androidPatch)
     Invoke-Checked git @('-C', $source, '-c', 'core.whitespace=cr-at-eol', 'apply', '--ignore-space-change', '--ignore-whitespace', $androidPatch)
 }
+& git -C $source -c core.whitespace=cr-at-eol apply --ignore-space-change --ignore-whitespace --reverse --check $adrenoPatch 2>$null
+if ($LASTEXITCODE -ne 0) {
+    Invoke-Checked git @('-C', $source, '-c', 'core.whitespace=cr-at-eol', 'apply', '--ignore-space-change', '--ignore-whitespace', '--check', $adrenoPatch)
+    Invoke-Checked git @('-C', $source, '-c', 'core.whitespace=cr-at-eol', 'apply', '--ignore-space-change', '--ignore-whitespace', '--whitespace=nowarn', $adrenoPatch)
+}
 & "$PSScriptRoot/ApplyPerformancePatches.ps1" -Source $source
 $modules = @('cli11', 'libmspack', 'FFmpeg', 'tomlplusplus', 'simde', 'xxHash', 'spdlog', 'fmt', 'utfcpp', 'imgui', 'sdl3', 'vulkan-headers', 'vulkan-memory-allocator', 'spirv-headers', 'spirv-tools', 'glslang', 'o1heap', 'inja')
 Invoke-Checked git (@('-C', $source, '-c', 'core.longpaths=true', 'submodule', 'update', '--init', '--depth', '1', '--jobs', "$Jobs", '--') + @($modules | ForEach-Object { "thirdparty/$_" }))
-Invoke-Checked $CMake @('-S', $source, '-B', $build, '-G', 'Ninja', "-DCMAKE_MAKE_PROGRAM=$Ninja", "-DCMAKE_TOOLCHAIN_FILE=$NdkRoot/build/cmake/android.toolchain.cmake", '-DANDROID_ABI=arm64-v8a', '-DANDROID_PLATFORM=android-26', '-DANDROID_STL=c++_shared', '-DCMAKE_BUILD_TYPE=Release', '-DREXGLUE_USE_D3D12=OFF', '-DREXGLUE_USE_VULKAN=ON', '-DREXGLUE_ENABLE_TRACY=OFF', '-DREXGLUE_ENABLE_PERF_COUNTERS=OFF', '-DREXGLUE_BUILD_TESTS=OFF', '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON')
-Invoke-Checked $CMake @('--build', $build, '--target', 'rexruntime', 'rexgpu-xenos', '--parallel', "$Jobs")
+Invoke-Checked $CMake @('-S', $source, '-B', $build, '-G', 'Ninja', "-DCMAKE_MAKE_PROGRAM=$Ninja", "-DCMAKE_TOOLCHAIN_FILE=$NdkRoot/build/cmake/android.toolchain.cmake", '-DANDROID_ABI=arm64-v8a', '-DANDROID_PLATFORM=android-26', '-DANDROID_STL=c++_shared', '-DCMAKE_BUILD_TYPE=Release', '-DREXGLUE_USE_D3D12=OFF', '-DREXGLUE_USE_VULKAN=ON', '-DREXGLUE_ENABLE_TRACY=OFF', '-DREXGLUE_ENABLE_PERF_COUNTERS=OFF', '-DREXGLUE_BUILD_TESTS=OFF', "-DREX_ADRENOTOOLS_SOURCE_DIR=$adrenoSource", '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON')
+Invoke-Checked $CMake @('--build', $build, '--target', 'rexruntime', 'rexgpu-xenos', 'main_hook', 'hook_impl', '--parallel', "$Jobs")
 Write-Output "Runtime and GPU: $source/out/linux-arm64 (Android arm64-v8a; inherited output directory name)."
 Write-Output "Compilation database: $build/compile_commands.json"
