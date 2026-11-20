@@ -13,6 +13,7 @@ La APK y su SHA-256 se distribuyen en [Releases](https://github.com/kurkobein112
 3. También puedes pulsar **IMPORTAR PASTA DO JOGO** y seleccionar la carpeta que contiene directamente `default.xex`, `fifadllzf.xex.dll`, `data0.big`, `data0.bh` y la carpeta `dlc`. La app copia los archivos a su almacenamiento privado y verifica los ejecutables antes de habilitar el juego.
 4. Para ISO, deja espacio para el archivo y aproximadamente **4,7 GB adicionales** para extraer los datos. La ISO original no se modifica.
 5. Elige **Mali** o **Snapdragon / Adreno** y pulsa **JUGAR**.
+6. En un dispositivo **Snapdragon / Adreno (ARM64, Android 9+)**, puedes usar **IMPORTAR DRIVER ADRENO (ZIP)** para instalar un paquete AdrenoTools/Turnip compatible. El driver se guarda en el almacenamiento privado de la app y se activa al abrir el juego de nuevo. **USAR DRIVER ORIGINAL DEL SISTEMA** desactiva el driver personalizado. No instales paquetes destinados a otra generación de GPU; Mali no utiliza Turnip.
 
 No se distribuye la ISO ni los archivos de datos del juego. Los archivos de PS3 y los juegos FIFA Street 1/2 no son compatibles.
 
