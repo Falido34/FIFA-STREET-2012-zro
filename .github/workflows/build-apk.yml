@@ -104,6 +104,20 @@ jobs:
           New-Item -ItemType Junction -Path $w64devkit -Target $mingw | Out-Null
           "FIFA_TOOLS=$tools" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
+      # Preserve the pinned ReXGlue checkout, submodules and CMake outputs between runs.
+      # Patch hashes invalidate incompatible caches; the restore prefix still allows
+      # incremental rebuilding after a patch-only change.
+      - name: Cache ReXGlue source and native build outputs
+        uses: actions/cache@v4
+        with:
+          path: |
+            .android-work/rexglue
+            .android-work/build-rex-arm64
+            .android-work/build-codegen-gcc
+          key: ${{ runner.os }}-rexglue-c94f5ebd-${{ hashFiles('patches/**', 'android/rexglue-*.patch', 'android/BuildRuntime.ps1', 'android/ApplyPerformancePatches.ps1', 'android/BuildHostGenerator.ps1') }}
+          restore-keys: |
+            ${{ runner.os }}-rexglue-c94f5ebd-
+
       - name: Build ReXGlue runtime and host generator
         shell: pwsh
         run: ./android/BuildHostGenerator.ps1 -ToolsRoot "$env:FIFA_TOOLS" -Jobs 4
