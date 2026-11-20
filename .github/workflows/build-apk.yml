@@ -33,7 +33,6 @@ jobs:
             native:
               - 'patches/**'
               - 'game-template/**'
-              - 'android/native/**'
               - 'android/rexglue-*.patch'
               - 'android/BuildRuntime.ps1'
               - 'android/ApplyPerformancePatches.ps1'
@@ -54,7 +53,7 @@ jobs:
             .android-work/build-codegen-gcc
             .android-work/build-game-arm64
             .android-work/game
-          key: ${{ runner.os }}-rexglue-c94f5ebd-v2-${{ hashFiles('patches/**', 'game-template/**', 'android/native/**', 'android/rexglue-*.patch', 'android/BuildRuntime.ps1', 'android/ApplyPerformancePatches.ps1', 'android/BuildHostGenerator.ps1', 'android/BuildGame.ps1', 'android/GenerateGame.ps1', 'android/ffmpeg-mingw.patch') }}
+          key: ${{ runner.os }}-rexglue-c94f5ebd-v2-${{ hashFiles('patches/**', 'game-template/**', 'android/rexglue-*.patch', 'android/BuildRuntime.ps1', 'android/ApplyPerformancePatches.ps1', 'android/BuildHostGenerator.ps1', 'android/BuildGame.ps1', 'android/GenerateGame.ps1', 'android/ffmpeg-mingw.patch') }}
           restore-keys: |
             ${{ runner.os }}-rexglue-c94f5ebd-v2-
 
