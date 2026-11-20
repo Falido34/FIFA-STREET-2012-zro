@@ -24,7 +24,7 @@ if ($LASTEXITCODE -ne 0) {
 $oldPath = $env:PATH
 try {
     $env:PATH = "$ToolsRoot\w64devkit\bin;$env:PATH"
-    & $cmake -S $source -B $build -G Ninja "-DCMAKE_MAKE_PROGRAM=$ninja" "-DCMAKE_C_COMPILER=$gcc" "-DCMAKE_CXX_COMPILER=$gxx" -DCMAKE_C_FLAGS=-mssse3 -DCMAKE_CXX_FLAGS=-mssse3 -DCMAKE_EXE_LINKER_FLAGS=-static -DCMAKE_SHARED_LINKER_FLAGS=-static -DREXGLUE_ALLOW_GNU_HOST_CODEGEN=ON -DCMAKE_BUILD_TYPE=Release -DREXGLUE_USE_D3D12=OFF -DREXGLUE_USE_VULKAN=ON -DREXGLUE_ENABLE_TRACY=OFF -DREXGLUE_ENABLE_PERF_COUNTERS=OFF -DREXGLUE_BUILD_TESTS=OFF
+    & $cmake -S $source -B $build -G Ninja "-DCMAKE_MAKE_PROGRAM=$ninja" "-DCMAKE_C_COMPILER=$gcc" "-DCMAKE_CXX_COMPILER=$gxx" -DCMAKE_C_FLAGS=-mssse3 -DCMAKE_CXX_FLAGS=-mssse3 -DCMAKE_EXE_LINKER_FLAGS=-static "-DCMAKE_SHARED_LINKER_FLAGS=-static -Wl,--exclude-symbols,_Unwind_Resume" -DREXGLUE_ALLOW_GNU_HOST_CODEGEN=ON -DCMAKE_BUILD_TYPE=Release -DREXGLUE_USE_D3D12=OFF -DREXGLUE_USE_VULKAN=ON -DREXGLUE_ENABLE_TRACY=OFF -DREXGLUE_ENABLE_PERF_COUNTERS=OFF -DREXGLUE_BUILD_TESTS=OFF
     if ($LASTEXITCODE -ne 0) { throw 'Host code generator configuration failed.' }
     & $cmake --build $build --target rexglue --parallel $Jobs
     if ($LASTEXITCODE -ne 0) { throw 'Host code generator build failed.' }
