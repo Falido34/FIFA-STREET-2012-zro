@@ -6,8 +6,31 @@ import java.io.File;
 public final class GameActivity extends SDLActivity {
     private TouchControls touch;
     @Override protected void onCreate(android.os.Bundle saved) {
-        try { android.system.Os.setenv("REX_NATIVE_LIBC_HOOKS","1",true); }
-        catch(android.system.ErrnoException e) {throw new IllegalStateException(e);}
+        try {
+            android.system.Os.setenv("REX_NATIVE_LIBC_HOOKS","1",true);
+            android.system.Os.setenv("REX_ADRENO_HOOK_DIR",getApplicationInfo().nativeLibraryDir,true);
+            java.io.File selected=new java.io.File(getFilesDir(),"gpu-drivers/active.txt");
+            if(selected.isFile()) {
+                try(java.io.BufferedReader reader=new java.io.BufferedReader(new java.io.FileReader(selected))) {
+                    String directory=reader.readLine(),library=reader.readLine();
+                    if(directory!=null&&library!=null&&!directory.isEmpty()&&!library.isEmpty()) {
+                        if(!directory.endsWith(java.io.File.separator))directory+=java.io.File.separator;
+                        android.system.Os.setenv("REX_ADRENO_DRIVER_DIR",directory,true);
+                        android.system.Os.setenv("REX_ADRENO_DRIVER_NAME",library,true);
+                    } else {
+                        android.system.Os.unsetenv("REX_ADRENO_DRIVER_DIR");
+                        android.system.Os.unsetenv("REX_ADRENO_DRIVER_NAME");
+                    }
+                } catch(java.io.IOException error) {
+                    android.util.Log.w("FifaAdreno","Invalid custom driver selection; using system Vulkan",error);
+                    android.system.Os.unsetenv("REX_ADRENO_DRIVER_DIR");
+                    android.system.Os.unsetenv("REX_ADRENO_DRIVER_NAME");
+                }
+            } else {
+                android.system.Os.unsetenv("REX_ADRENO_DRIVER_DIR");
+                android.system.Os.unsetenv("REX_ADRENO_DRIVER_NAME");
+            }
+        } catch(android.system.ErrnoException e) {throw new IllegalStateException(e);}
         super.onCreate(saved);
         setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         android.view.View decor=getWindow().getDecorView();
