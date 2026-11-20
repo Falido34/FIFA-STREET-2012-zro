@@ -13,7 +13,7 @@ index 0000000..0000000 100644
 +    add_compile_options(-Wno-error)
 +    add_subdirectory("${REX_ADRENOTOOLS_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/adrenotools")
 +    target_include_directories(rexui PRIVATE "${REX_ADRENOTOOLS_SOURCE_DIR}/include")
-+    target_link_libraries(rexruntime PRIVATE adrenotools)
+++    target_link_libraries(rexruntime PRIVATE adrenotools dl)
 +    set_target_properties(main_hook hook_impl PROPERTIES
 +        LIBRARY_OUTPUT_DIRECTORY "${REX_ADRENOTOOLS_OUTPUT_DIR}")
 +endif()
