@@ -41,19 +41,19 @@ jobs:
               - 'android/GenerateGame.ps1'
               - 'android/ffmpeg-mingw.patch'
 
-      # Keep generated game modules and native CMake outputs so Java/UI-only
-      # changes can package a fresh APK without recompiling ReXGlue or the game.
+      # Keep the single Android CMake tree and generated game modules so Java/UI-only
+      # changes can package a fresh APK without recompiling native targets.
       - name: Cache ReXGlue and generated native game outputs
         id: native-cache
         uses: actions/cache@v4
         with:
           path: |
             .android-work/rexglue
-            .android-work/build-rex-arm64
+            .android-work/build-game-arm64
             .android-work/build-codegen-gcc
             .android-work/build-game-arm64
             .android-work/game
-          key: ${{ runner.os }}-rexglue-c94f5ebd-v2-${{ hashFiles('patches/**', 'game-template/**', 'android/rexglue-*.patch', 'android/BuildRuntime.ps1', 'android/ApplyPerformancePatches.ps1', 'android/BuildHostGenerator.ps1', 'android/BuildGame.ps1', 'android/GenerateGame.ps1', 'android/ffmpeg-mingw.patch') }}
+          key: ${{ runner.os }}-rexglue-c94f5ebd-v3-${{ hashFiles('patches/**', 'game-template/**', 'android/rexglue-*.patch', 'android/BuildRuntime.ps1', 'android/ApplyPerformancePatches.ps1', 'android/BuildHostGenerator.ps1', 'android/BuildGame.ps1', 'android/GenerateGame.ps1', 'android/ffmpeg-mingw.patch') }}
           restore-keys: |
             ${{ runner.os }}-rexglue-c94f5ebd-v2-
 

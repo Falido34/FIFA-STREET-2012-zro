@@ -26,7 +26,7 @@ $androidPatch = Join-Path $PSScriptRoot 'rexglue-android.patch'
 $performancePatch = Join-Path $PSScriptRoot 'rexglue-performance.patch'
 $mobilePatch = Join-Path $PSScriptRoot 'rexglue-mobile.patch'
 $shaderPatch = Join-Path $PSScriptRoot 'rexglue-shader-opt.patch'
-foreach ($path in @($CMake, $Ninja, "$NdkRoot/build/cmake/android.toolchain.cmake", $gamePatch, $androidPatch, $performancePatch, $mobilePatch, $shaderPatch, $adrenoPatch)) {
+foreach ($path in @($gamePatch, $androidPatch, $performancePatch, $mobilePatch, $shaderPatch, $adrenoPatch)) {
     if (!(Test-Path -LiteralPath $path)) { throw "Missing prerequisite: $path. No software was installed." }
 }
 function Invoke-Checked([string]$Tool, [string[]]$Arguments) {
@@ -67,7 +67,6 @@ if ($LASTEXITCODE -ne 0) {
 & "$PSScriptRoot/ApplyPerformancePatches.ps1" -Source $source
 $modules = @('cli11', 'libmspack', 'FFmpeg', 'tomlplusplus', 'simde', 'xxHash', 'spdlog', 'fmt', 'utfcpp', 'imgui', 'sdl3', 'vulkan-headers', 'vulkan-memory-allocator', 'spirv-headers', 'spirv-tools', 'glslang', 'o1heap', 'inja')
 Invoke-Checked git (@('-C', $source, '-c', 'core.longpaths=true', 'submodule', 'update', '--init', '--depth', '1', '--jobs', "$Jobs", '--') + @($modules | ForEach-Object { "thirdparty/$_" }))
-Invoke-Checked $CMake @('-S', $source, '-B', $build, '-G', 'Ninja', "-DCMAKE_MAKE_PROGRAM=$Ninja", "-DCMAKE_TOOLCHAIN_FILE=$NdkRoot/build/cmake/android.toolchain.cmake", '-DANDROID_ABI=arm64-v8a', '-DANDROID_PLATFORM=android-26', '-DANDROID_STL=c++_shared', '-DCMAKE_BUILD_TYPE=Release', '-DREXGLUE_USE_D3D12=OFF', '-DREXGLUE_USE_VULKAN=ON', '-DREXGLUE_ENABLE_TRACY=OFF', '-DREXGLUE_ENABLE_PERF_COUNTERS=OFF', '-DREXGLUE_BUILD_TESTS=OFF', "-DREX_ADRENOTOOLS_SOURCE_DIR=$adrenoSource", '-DCMAKE_EXPORT_COMPILE_COMMANDS=ON')
-Invoke-Checked $CMake @('--build', $build, '--target', 'rexruntime', 'rexgpu-xenos', 'main_hook', 'hook_impl', '--parallel', "$Jobs")
-Write-Output "Runtime and GPU: $source/out/linux-arm64 (Android arm64-v8a; inherited output directory name)."
-Write-Output "Compilation database: $build/compile_commands.json"
+# Android ReXGlue is compiled by BuildGame.ps1 in the same CMake tree as the
+# game modules. Building it here as well created a second full native build.
+Write-Output "ReXGlue source and Android patches prepared; native targets will be built once with the game."
