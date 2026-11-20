@@ -72,7 +72,7 @@ public final class MainActivity extends Activity {
         controls = new Spinner(this);ArrayAdapter<String> styles = new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,TouchControls.STYLES);
         styles.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);controls.setAdapter(styles);controls.setContentDescription("Estilo de controles táctiles");
         controls.setSelection(Math.max(0,Math.min(2,getPreferences(MODE_PRIVATE).getInt("controls",1))));content.addView(controls,new LinearLayout.LayoutParams(-1,dp(48)));
-        content.addView(text("Mando Bluetooth o USB: conéctalo antes o durante el juego. Los controles táctiles se ocultan al detectarlo.",13,0xFFBDCFC5));
+        content.addView(text("Mando Bluetooth ou USB: pode usar junto com os controles táteis, que continuam visíveis.",13,0xFFBDCFC5));
         playButton=new Button(this);playButton.setText("JUGAR");playButton.setTextColor(Color.WHITE);playButton.setBackgroundTintList(new android.content.res.ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{android.R.attr.state_pressed},new int[]{}},new int[]{0xFF38444D,0xFF15334D,0xFF24577D}));playButton.setMinHeight(dp(52));
         LinearLayout.LayoutParams playLayout=new LinearLayout.LayoutParams(-1,dp(52));playLayout.topMargin=dp(16);content.addView(playButton,playLayout);
         playButton.setOnClickListener(v -> {
