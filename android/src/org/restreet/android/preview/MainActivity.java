@@ -23,6 +23,7 @@ public final class MainActivity extends Activity {
     private ProgressBar progress;
     private Button importButton, folderButton, playButton, cancelButton, driverButton, systemDriverButton;
     private Spinner gpu, controls;
+    private TextView driverStatus;
     private volatile boolean cancelled;
     private volatile boolean importing;
     private Thread worker;
@@ -71,7 +72,7 @@ public final class MainActivity extends Activity {
         profiles.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);gpu.setAdapter(profiles);gpu.setContentDescription("Compatibilidad de GPU");
         gpu.setSelection(GpuProfile.fromName(getPreferences(MODE_PRIVATE).getString("gpu_profile","MALI")).ordinal());content.addView(gpu,new LinearLayout.LayoutParams(-1,dp(48)));
         content.addView(label("Driver Vulkan Adreno (opcional)"));
-        TextView driverStatus=text("",13,0xFFBDCFC5);driverStatus.setText(AdrenoDriverManager.selectedLabel(this));content.addView(driverStatus);
+        driverStatus=text("",13,0xFFBDCFC5);driverStatus.setText(AdrenoDriverManager.selectedLabel(this));content.addView(driverStatus);
         driverButton=new Button(this);driverButton.setText("IMPORTAR DRIVER ADRENO (ZIP)");driverButton.setMinHeight(dp(48));
         driverButton.setOnClickListener(v->{
             if(Build.VERSION.SDK_INT<28){status.setText("Adreno Tools requer Android 9 ou superior.");return;}
@@ -103,7 +104,7 @@ public final class MainActivity extends Activity {
     private TextView text(String value,int size,int color) { TextView t=new TextView(this);t.setText(value);t.setTextSize(size);t.setTextColor(color);return t; }
     private TextView label(String value) { TextView t=text(value,15,0xFFF4EEE0);t.setPadding(0,dp(16),0,dp(2));return t; }
     private void refresh() {
-        boolean ready=gameReady();playButton.setEnabled(ready&&!importing);importButton.setEnabled(!importing&&!data().exists());
+        boolean ready=gameReady();playButton.setEnabled(ready&&!importing);\n        if(driverStatus!=null)driverStatus.setText(AdrenoDriverManager.selectedLabel(this));importButton.setEnabled(!importing&&!data().exists());
         folderButton.setEnabled(!importing&&!data().exists());
         gpu.setEnabled(!importing);controls.setEnabled(!importing);\n        if(driverButton!=null)driverButton.setEnabled(!importing&&Build.VERSION.SDK_INT>=28);\n        if(systemDriverButton!=null)systemDriverButton.setEnabled(!importing);
         if (!importing) status.setText(ready?"Juego importado.":data().exists()?"GameData está incompleto. Se conservó sin sobrescribir; revisa el almacenamiento de la app.":"");
