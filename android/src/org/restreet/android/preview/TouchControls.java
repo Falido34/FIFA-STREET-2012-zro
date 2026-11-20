@@ -86,8 +86,8 @@ public final class TouchControls extends android.widget.RelativeLayout implement
                 pad("←",13,146,60,false,false);pad("→",14,258,60,false,false);
             }
         }
-        for(PadButton b:buttons)b.setVisibility(physical?GONE:VISIBLE);
-        for(Stick s:sticks)s.setVisibility(physical?GONE:VISIBLE);
+        for(PadButton b:buttons)b.setVisibility(VISIBLE);
+        for(Stick s:sticks)s.setVisibility(VISIBLE);
     }
     private int dp(float value) { return Math.round(value * getResources().getDisplayMetrics().density); }
     private void pad(String label, int index, int x, int y, boolean right, boolean top) {
@@ -128,9 +128,9 @@ public final class TouchControls extends android.widget.RelativeLayout implement
                     || d.supportsSource(InputDevice.SOURCE_JOYSTICK))) physical = true;
         }
         handler.removeCallbacks(retry); releaseAll();
-        for (PadButton b : buttons) b.setVisibility(physical ? GONE : VISIBLE);
-        for (Stick s : sticks) s.setVisibility(physical ? GONE : VISIBLE);
-        if (physical) { disconnect(); ready = false; state.setText("Mando conectado · controles táctiles ocultos"); }
+        for (PadButton b : buttons) b.setVisibility(VISIBLE);
+        for (Stick s : sticks) s.setVisibility(VISIBLE);
+        if (physical) state.setText("Mando conectado · controles tácteis ativos");
         else if (active) handler.post(retry);
     }
     @Override public void onInputDeviceAdded(int id) { refreshHardware(); }
