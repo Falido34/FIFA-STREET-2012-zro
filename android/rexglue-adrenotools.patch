@@ -1,0 +1,128 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 0000000..0000000 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -340,6 +340,17 @@ add_subdirectory(src/kernel)
+ add_subdirectory(src/codegen)
+ add_subdirectory(src/rexglue)
+ 
++if(ANDROID AND DEFINED REX_ADRENOTOOLS_SOURCE_DIR)
++    set(REX_ADRENOTOOLS_OUTPUT_DIR "${CMAKE_BINARY_DIR}/adrenotools/lib")
++    set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${REX_ADRENOTOOLS_OUTPUT_DIR}")
++    set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${REX_ADRENOTOOLS_OUTPUT_DIR}")
++    add_subdirectory("${REX_ADRENOTOOLS_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/adrenotools")
++    target_link_libraries(rexruntime PRIVATE adrenotools)
++    set_target_properties(main_hook hook_impl PROPERTIES
++        LIBRARY_OUTPUT_DIRECTORY "${REX_ADRENOTOOLS_OUTPUT_DIR}")
++endif()
++
+ if(REXGLUE_BUILD_TESTS)
+     enable_testing()
+     add_subdirectory(tests)
+diff --git a/include/rex/ui/vulkan/instance.h b/include/rex/ui/vulkan/instance.h
+index 0000000..0000000 100644
+--- a/include/rex/ui/vulkan/instance.h
++++ b/include/rex/ui/vulkan/instance.h
+@@ -139,6 +139,9 @@ class VulkanInstance {
+ 
+   rex::platform::DynamicLibrary loader_;
+ 
++#if defined(__ANDROID__)
++  void* adrenotools_loader_ = nullptr;
++#endif
++
+   Functions functions_;
+ 
+   uint32_t api_version_ = VK_MAKE_API_VERSION(0, 1, 0, 0);
+diff --git a/src/ui/vulkan/vulkan_instance.cpp b/src/ui/vulkan/vulkan_instance.cpp
+index 0000000..0000000 100644
+--- a/src/ui/vulkan/vulkan_instance.cpp
++++ b/src/ui/vulkan/vulkan_instance.cpp
+@@ -15,6 +15,12 @@
+ #include <utility>
+ #include <vector>
+ 
++#if defined(__ANDROID__)
++#include <cstdlib>
++#include <dlfcn.h>
++#include <adrenotools/driver.h>
++#endif
++
+ #include <rex/cvar.h>
+ #include <rex/logging.h>
+ #include <rex/platform.h>
+@@ -39,6 +45,25 @@ std::unique_ptr<VulkanInstance> VulkanInstance::Create(const bool with_surface,
+ 
+   bool functions_loaded = true;
+   bool loader_loaded = false;
++#if defined(__ANDROID__)
++  const char* custom_driver_dir = std::getenv("REX_ADRENO_DRIVER_DIR");
++  const char* custom_driver_name = std::getenv("REX_ADRENO_DRIVER_NAME");
++  const char* hook_library_dir = std::getenv("REX_ADRENO_HOOK_DIR");
++  if (custom_driver_dir && custom_driver_name && hook_library_dir &&
++      custom_driver_dir[0] && custom_driver_name[0] && hook_library_dir[0]) {
++    vulkan_instance->adrenotools_loader_ = adrenotools_open_libvulkan(
++        RTLD_NOW | RTLD_LOCAL, ADRENOTOOLS_DRIVER_CUSTOM, nullptr, hook_library_dir,
++        custom_driver_dir, custom_driver_name, nullptr, nullptr);
++    if (vulkan_instance->adrenotools_loader_) {
++      ifn.vkGetInstanceProcAddr = reinterpret_cast<PFN_vkGetInstanceProcAddr>(
++          dlsym(vulkan_instance->adrenotools_loader_, "vkGetInstanceProcAddr"));
++      ifn.vkDestroyInstance = reinterpret_cast<PFN_vkDestroyInstance>(
++          dlsym(vulkan_instance->adrenotools_loader_, "vkDestroyInstance"));
++      loader_loaded = ifn.vkGetInstanceProcAddr && ifn.vkDestroyInstance;
++      if (loader_loaded) {
++        REXLOG_INFO("Adreno Tools custom Vulkan driver selected: {}", custom_driver_name);
++      } else {
++        REXLOG_WARN("Adreno Tools did not expose required Vulkan loader symbols; using system driver");
++        dlclose(vulkan_instance->adrenotools_loader_);
++        vulkan_instance->adrenotools_loader_ = nullptr;
++      }
++    } else {
++      REXLOG_WARN("Adreno Tools could not open the selected driver; using system Vulkan driver");
++    }
++  }
++#endif
+ #if REX_PLATFORM_MAC
+   const MacOSVulkanRuntimePaths macos_runtime_paths = DetectMacOSVulkanRuntimePaths();
+@@ -70,13 +95,20 @@ std::unique_ptr<VulkanInstance> VulkanInstance::Create(const bool with_surface,
+   }
+ #else
+-  loader_loaded = vulkan_instance->loader_.Load(platform::lib_names::kVulkanLoader);
++  if (!loader_loaded) {
++    loader_loaded = vulkan_instance->loader_.Load(platform::lib_names::kVulkanLoader);
++  }
+   if (!loader_loaded) {
+     REXLOG_ERROR("Failed to load {}", platform::lib_names::kVulkanLoader);
+     return nullptr;
+   }
+ #endif
+ 
++#if defined(__ANDROID__)
++  if (vulkan_instance->adrenotools_loader_) {
++    functions_loaded &= ifn.vkGetInstanceProcAddr != nullptr && ifn.vkDestroyInstance != nullptr;
++  } else
++#endif
++  {
+ #define XE_VULKAN_LOAD_LOADER_FUNCTION(name) \
+   functions_loaded &= (ifn.name = vulkan_instance->loader_.GetSymbol<PFN_##name>(#name)) != nullptr;
+   XE_VULKAN_LOAD_LOADER_FUNCTION(vkGetInstanceProcAddr);
+   XE_VULKAN_LOAD_LOADER_FUNCTION(vkDestroyInstance);
+ #undef XE_VULKAN_LOAD_LOADER_FUNCTION
++  }
+   if (!functions_loaded) {
+     REXLOG_ERROR("Failed to get Vulkan loader function pointers");
+     return nullptr;
+@@ -430,7 +462,13 @@ VulkanInstance::~VulkanInstance() {
+     functions_.vkDestroyInstance(instance_, nullptr);
+   }
+ 
++#if defined(__ANDROID__)
++  if (adrenotools_loader_) {
++    dlclose(adrenotools_loader_);
++  } else {
++    loader_.Close();
++  }
++#else
+   loader_.Close();
++#endif
+ }
