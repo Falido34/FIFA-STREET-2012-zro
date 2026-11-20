@@ -2,7 +2,7 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 0000000..0000000 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -340,7 +340,19 @@ add_subdirectory(src/kernel)
+@@ -340,8 +340,20 @@ add_subdirectory(src/kernel)
  add_subdirectory(src/codegen)
  add_subdirectory(src/rexglue)
  
@@ -18,6 +18,7 @@ index 0000000..0000000 100644
 +        LIBRARY_OUTPUT_DIRECTORY "${REX_ADRENOTOOLS_OUTPUT_DIR}")
 +endif()
 +
+ # Add tests subdirectory if tests are enabled
  if(REXGLUE_BUILD_TESTS)
      enable_testing()
      add_subdirectory(tests)
