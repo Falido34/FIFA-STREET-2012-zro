@@ -9,17 +9,20 @@ public final class GameActivity extends SDLActivity {
         try { android.system.Os.setenv("REX_NATIVE_LIBC_HOOKS","1",true); }
         catch(android.system.ErrnoException e) {throw new IllegalStateException(e);}
         super.onCreate(saved);
-        if(mLayout!=null) {
-            setControls(getIntent().getIntExtra("controls",1));
+        setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        android.view.View decor=getWindow().getDecorView();
+        android.widget.FrameLayout overlay=(android.widget.FrameLayout)decor;
+        setControls(getIntent().getIntExtra("controls",1));
             android.widget.ImageButton switcher=new android.widget.ImageButton(this);
             switcher.setImageResource(android.R.drawable.ic_menu_preferences);switcher.setImageTintList(android.content.res.ColorStateList.valueOf(0xFFEAEDE7));
             switcher.setContentDescription("Controles: estilo, tamaño y transparencia");
             android.graphics.drawable.GradientDrawable background=new android.graphics.drawable.GradientDrawable();background.setShape(android.graphics.drawable.GradientDrawable.OVAL);background.setColor(0x55202523);switcher.setBackground(background);
             int target=Math.round(48*getResources().getDisplayMetrics().density);
             int inset=Math.round(14*getResources().getDisplayMetrics().density);switcher.setPadding(inset,inset,inset,inset);
-            android.widget.RelativeLayout.LayoutParams position=new android.widget.RelativeLayout.LayoutParams(target,target);
-            position.addRule(android.widget.RelativeLayout.CENTER_HORIZONTAL);position.addRule(android.widget.RelativeLayout.ALIGN_PARENT_TOP);
-            mLayout.addView(switcher,position);
+            android.widget.FrameLayout.LayoutParams position=new android.widget.FrameLayout.LayoutParams(target,target,android.view.Gravity.TOP|android.view.Gravity.CENTER_HORIZONTAL);
+            position.topMargin=Math.round(8*getResources().getDisplayMetrics().density);
+            switcher.setElevation(1000f);
+            overlay.addView(switcher,position);
             switcher.setOnClickListener(v->{
                 android.widget.PopupMenu menu=new android.widget.PopupMenu(this,switcher);
                 for(int i=0;i<TouchControls.STYLES.length;i++)menu.getMenu().add(0,i,i,TouchControls.STYLES[i]);
@@ -31,12 +34,15 @@ public final class GameActivity extends SDLActivity {
                 });
                 menu.show();
             });
-        }
     }
     private void setControls(int style) {
-        if(touch!=null)mLayout.removeView(touch);
+        if(touch!=null && touch.getParent() instanceof android.view.ViewGroup)
+            ((android.view.ViewGroup)touch.getParent()).removeView(touch);
         touch=new TouchControls(this,style);
-        mLayout.addView(touch,new android.widget.RelativeLayout.LayoutParams(-1,-1));
+        touch.setElevation(900f);
+        android.widget.FrameLayout overlay=(android.widget.FrameLayout)getWindow().getDecorView();
+        overlay.addView(touch,new android.widget.FrameLayout.LayoutParams(-1,-1));
+        touch.bringToFront();
     }
     private void showControlSettings() {
         touch.releaseAll();
