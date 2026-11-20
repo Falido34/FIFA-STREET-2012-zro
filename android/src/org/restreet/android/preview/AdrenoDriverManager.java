@@ -55,11 +55,17 @@ final class AdrenoDriverManager {
                             }
                         }
                     } else {
-                        while(zip.read(buffer)!=-1) { /* Ignore non-driver payloads without extracting them. */ }
+                        int n;
+                        while((n=zip.read(buffer))!=-1) {
+                            total+=n;
+                            if(total>MAX_TOTAL)throw new IOException("ZIP excede o limite de 512 MiB descompactados.");
+                        }
                     }
                     zip.closeEntry();
                 }
             }
+            if(meta!=null&&meta.optInt("minApi",28)>Build.VERSION.SDK_INT)
+                throw new IOException("Este driver exige Android "+meta.optInt("minApi")+".");
             String library = meta==null ? "" : meta.optString("libraryName",meta.optString("library",""));
             if (!library.isEmpty()) {
                 File candidate = new File(stage, new File(library).getName());
