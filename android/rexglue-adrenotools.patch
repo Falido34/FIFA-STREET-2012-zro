@@ -2,7 +2,7 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 0000000..0000000 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -340,8 +340,20 @@ add_subdirectory(src/kernel)
+@@ -340,7 +340,19 @@ add_subdirectory(src/kernel)
  add_subdirectory(src/codegen)
  add_subdirectory(src/rexglue)
  
@@ -26,7 +26,7 @@ diff --git a/include/rex/ui/vulkan/instance.h b/include/rex/ui/vulkan/instance.h
 index 0000000..0000000 100644
 --- a/include/rex/ui/vulkan/instance.h
 +++ b/include/rex/ui/vulkan/instance.h
-@@ -139,7 +139,11 @@ class VulkanInstance {
+@@ -139,6 +139,10 @@ class VulkanInstance {
  
    rex::platform::DynamicLibrary loader_;
  
