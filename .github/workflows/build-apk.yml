@@ -120,14 +120,20 @@ jobs:
           update: true
           install: mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja
 
-      - name: Prepare the exact tool paths expected by project scripts
-        if: steps.changes.outputs.native == 'true' || steps.native-cache.outputs.cache-hit != 'true'
+      - name: Prepare Android tool paths
         shell: pwsh
         run: |
           $tools = Join-Path $env:RUNNER_TEMP "fifa-tools"
           New-Item -ItemType Directory -Force -Path "$tools/jdk","$tools/android-sdk" | Out-Null
           New-Item -ItemType Junction -Path "$tools/jdk/jdk-17.0.20.1+1" -Target $env:JAVA_HOME | Out-Null
           New-Item -ItemType Junction -Path "$tools/android-sdk" -Target $env:ANDROID_HOME | Out-Null
+          "FIFA_TOOLS=$tools" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+
+      - name: Prepare MinGW paths for native compilation
+        if: steps.changes.outputs.native == 'true' || steps.native-cache.outputs.cache-hit != 'true'
+        shell: pwsh
+        run: |
+          $tools = Join-Path $env:RUNNER_TEMP "fifa-tools"
           $msys2cmd = Join-Path $env:RUNNER_TEMP "setup-msys2/msys2.cmd"
           if (!(Test-Path -LiteralPath $msys2cmd)) { throw "MSYS2 launcher not found: $msys2cmd" }
           $mingwBin = (& $msys2cmd -c "cygpath -w /mingw64/bin" | Select-Object -Last 1).Trim()
@@ -139,7 +145,6 @@ jobs:
           $w64devkit = Join-Path $tools "w64devkit"
           if (Test-Path -LiteralPath $w64devkit) { Remove-Item -LiteralPath $w64devkit -Recurse -Force }
           New-Item -ItemType Junction -Path $w64devkit -Target $mingw | Out-Null
-          "FIFA_TOOLS=$tools" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
       - name: Build ReXGlue runtime and host generator
         if: steps.changes.outputs.native == 'true' || steps.native-cache.outputs.cache-hit != 'true'
