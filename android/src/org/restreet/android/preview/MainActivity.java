@@ -6,6 +6,7 @@ import android.graphics.Color;
 import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Build;
 import android.os.ParcelFileDescriptor;
 import android.os.StatFs;
 import android.view.View;
@@ -113,7 +114,7 @@ public final class MainActivity extends Activity {
         final Uri uri=intent.getData();
         if(request==PICK_ADRENO_DRIVER) {
             cancelled=false;importing=true;refresh();
-            progress.setVisibility(View.VISIBLE);progress.setIndeterminate(true);cancelButton.setVisibility(View.VISIBLE);getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            progress.setVisibility(View.VISIBLE);progress.setIndeterminate(true);cancelButton.setVisibility(View.GONE);getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
             worker=new Thread(()->{
                 String message;
                 try { String installed=AdrenoDriverManager.importZip(this,uri);message="Driver importado: "+installed+". Feche e abra o jogo novamente para carregar."; }
