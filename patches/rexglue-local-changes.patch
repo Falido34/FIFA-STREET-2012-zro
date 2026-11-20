@@ -7245,7 +7245,7 @@ diff --git a/src/system/runtime.cpp b/src/system/runtime.cpp
 index c10694c..2e6bceb 100644
 --- a/src/system/runtime.cpp
 +++ b/src/system/runtime.cpp
-@@ -34,8 +34,37 @@ REXCVAR_DEFINE_STRING(update_data_root, "", "Runtime", "Override update data pat
+@@ -34,8 +34,41 @@ REXCVAR_DEFINE_STRING(update_data_root, "", "Runtime", "Override update data pat
  REXCVAR_DEFINE_STRING(cache_root, "", "Runtime", "Override shader cache path");
  REXCVAR_DEFINE_STRING(metadata_root, "", "Runtime", "Override metadata path");
  
