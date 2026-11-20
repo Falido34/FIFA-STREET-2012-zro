@@ -2,7 +2,7 @@ diff --git a/CMakeLists.txt b/CMakeLists.txt
 index 0000000..0000000 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -340,7 +340,17 @@ add_subdirectory(src/kernel)
+@@ -340,7 +340,18 @@ add_subdirectory(src/kernel)
  add_subdirectory(src/codegen)
  add_subdirectory(src/rexglue)
  
