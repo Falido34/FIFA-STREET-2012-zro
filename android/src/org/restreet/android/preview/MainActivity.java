@@ -82,8 +82,8 @@ public final class MainActivity extends Activity {
             try { startActivityForResult(picker, PICK_FIFA3_FOLDER); }
             catch (android.content.ActivityNotFoundException e) { status.setText("Não há seletor de pastas disponível neste telefone."); }
         }); content.addView(fifa3Button);
-        cancelButton = new Button(this); cancelButton.setText("CANCELAR EXTRACCIÓN"); cancelButton.setVisibility(View.GONE);
-        cancelButton.setOnClickListener(v -> { cancelled=true; status.setText("Cancelando y retirando la extracción incompleta…"); }); content.addView(cancelButton);
+        cancelButton = new Button(this); cancelButton.setText("CANCELAR OPERAÇÃO"); cancelButton.setVisibility(View.GONE);
+        cancelButton.setOnClickListener(v -> { cancelled=true; if(worker!=null)worker.interrupt(); status.setText("Cancelando a operação…"); }); content.addView(cancelButton);
         content.addView(label("Compatibilidad de GPU"));
         gpu = new Spinner(this); ArrayAdapter<GpuProfile> profiles = new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,GpuProfile.values());
         profiles.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);gpu.setAdapter(profiles);gpu.setContentDescription("Compatibilidad de GPU");
