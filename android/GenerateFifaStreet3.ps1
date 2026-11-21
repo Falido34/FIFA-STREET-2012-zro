@@ -33,9 +33,18 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "FIFA Street 3 code generation failed: exit $LASTEXITCODE" }
 } finally { Pop-Location }
 $generated = Join-Path $OutputRoot 'generated'
-if (Test-Path -LiteralPath $generated) {
-    & python (Join-Path $PSScriptRoot 'CompactRegistration.py') $generated
-    if ($LASTEXITCODE -ne 0) { throw 'FIFA Street 3 generated registration validation failed.' }
+$entryOutput = Join-Path $generated 'default'
+$sourcesManifest = Join-Path $entryOutput 'sources.cmake'
+if (!(Test-Path -LiteralPath $entryOutput -PathType Container)) {
+    throw "ReXGlue did not create the FIFA Street 3 entrypoint output directory: $entryOutput"
 }
-Write-Output "FIFA Street 3 isolated codegen output: $generated"
-Write-Warning "This is an initial entrypoint-only generation. It does not establish runtime compatibility or a playable Android build."
+if (!(Test-Path -LiteralPath $sourcesManifest -PathType Leaf)) {
+    throw "ReXGlue did not emit the required entrypoint source manifest: $sourcesManifest"
+}
+if ((Get-Item -LiteralPath $sourcesManifest).Length -le 0) {
+    throw "ReXGlue emitted an empty entrypoint source manifest: $sourcesManifest"
+}
+& python (Join-Path $PSScriptRoot 'CompactRegistration.py') $generated
+if ($LASTEXITCODE -ne 0) { throw 'FIFA Street 3 generated registration validation failed.' }
+Write-Output "FIFA Street 3 isolated codegen output validated: $entryOutput"
+Write-Warning "This validates code generation output only. It does not establish CMake integration, runtime compatibility, or a playable Android build."
