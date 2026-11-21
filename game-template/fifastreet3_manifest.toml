@@ -1,0 +1,12 @@
+# Experimental standalone profile for FIFA Street 3 (Xbox 360).
+# Only default.xex has been confirmed in the user's extracted game folder.
+[project]
+name = "fifastreet3"
+sdk_version = "0.10.0"
+game_root = "GAME_ROOT_PLACEHOLDER"
+
+[entrypoint]
+file_path = "GAME_ROOT_PLACEHOLDER/default.xex"
+out_directory_path = "generated/default"
+includes = []
+
