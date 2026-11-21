@@ -21,8 +21,9 @@ Java_org_restreet_android_preview_TouchControls_connect(JNIEnv*, jclass) {
   if (joystick) return true;
   // ReXGlue may initialize SDL without the gamepad subsystem. Start it here so
   // the virtual controller is registered before the first touch event.
-  if (!(SDL_WasInit(SDL_INIT_GAMEPAD) & SDL_INIT_GAMEPAD)) {
-    if (!SDL_InitSubSystem(SDL_INIT_GAMEPAD)) return false;
+  const Uint32 required = SDL_INIT_JOYSTICK | SDL_INIT_GAMEPAD;
+  if ((SDL_WasInit(required) & required) != required) {
+    if (!SDL_InitSubSystem(required)) return false;
   }
   SDL_VirtualJoystickDesc desc;
   SDL_INIT_INTERFACE(&desc);
