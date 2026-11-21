@@ -59,13 +59,13 @@ jobs:
       - name: Download FIFA Street 3 input release
         shell: pwsh
         env:
-          FIFA3_INPUT_TOKEN: ${{ secrets.FIFA3_INPUT_TOKEN }}
+          FIFA3_INPUT_TOKEN: ${{ secrets.FIFA3_OUTPUT_TOKEN }}
         run: |
           $zipPath = Join-Path $env:RUNNER_TEMP "4541083B.zip"
           # The source repository is private. Authenticate with a read-only token
           # and address it by numeric repository ID to avoid the trailing-dot slug.
           if ([string]::IsNullOrWhiteSpace($env:FIFA3_INPUT_TOKEN)) {
-            throw "Missing repository secret FIFA3_INPUT_TOKEN (read access to FIFA-STREET-2012-files.)."
+            throw "The existing FIFA3_OUTPUT_TOKEN must have Contents: read access to FIFA-STREET-2012-files. and Contents: write access to FIFA-STREET-2012-output."
           }
           $assetUrl = "https://api.github.com/repositories/1464730946/releases/assets/775976091"
           $headers = @{
