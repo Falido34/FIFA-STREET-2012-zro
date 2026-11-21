@@ -59,9 +59,19 @@ foreach($name in @('librexruntime.so','librexgpu-xenos.so')) {
     if(!$match) { throw "Required FIFA Street 3 runtime dependency was not produced: $name" }
     Copy-Item -LiteralPath $match[0].FullName -Destination (Join-Path $runtimeStage $name)
 }
-# SDLActivity requires SDL3's JNI bridge to be loaded before calling SDL_main.
-$sdl=@(Get-ChildItem -LiteralPath $build -Filter 'libSDL3.so' -File -Recurse | Select-Object -First 1)
-if(!$sdl) { throw 'SDL3 Android shared library (libSDL3.so) was not produced; cannot start SDLActivity.' }
+# Build the SDL3 Android JNI bridge from the SDK's pinned vendored source.
+# ReXGlue links against SDL headers, but does not build/package SDL itself.
+$sdlSource=Join-Path $source 'thirdparty/sdl3'
+$sdlBuild=Join-Path $repo '.android-work/build-sdl3-arm64'
+if(!(Test-Path -LiteralPath (Join-Path $sdlSource 'CMakeLists.txt'))) {
+    throw "Pinned SDL3 source tree is missing: $sdlSource"
+}
+& $cmake -S $sdlSource -B $sdlBuild -G Ninja "-DCMAKE_MAKE_PROGRAM=$ninja" "-DCMAKE_TOOLCHAIN_FILE=$ndk/build/cmake/android.toolchain.cmake" -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-26 -DANDROID_STL=c++_shared -DCMAKE_BUILD_TYPE=Release -DSDL_SHARED=ON -DSDL_STATIC=OFF -DSDL_TEST_LIBRARY=OFF -DSDL_TESTS=OFF
+if($LASTEXITCODE -ne 0) { throw 'SDL3 Android CMake configuration failed.' }
+& $cmake --build $sdlBuild --target SDL3-shared --parallel $Jobs
+if($LASTEXITCODE -ne 0) { throw 'SDL3 Android shared library compilation failed.' }
+$sdl=@(Get-ChildItem -LiteralPath $sdlBuild -Filter 'libSDL3.so' -File -Recurse | Select-Object -First 1)
+if(!$sdl) { throw 'SDL3 Android build completed but libSDL3.so was not found.' }
 Copy-Item -LiteralPath $sdl[0].FullName -Destination (Join-Path $runtimeStage 'libSDL3.so')
 
 Write-Output "FIFA Street 3 ARM64 entrypoint: $($library[0].FullName)"
