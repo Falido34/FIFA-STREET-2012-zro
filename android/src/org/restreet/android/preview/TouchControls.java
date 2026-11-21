@@ -89,6 +89,58 @@ public final class TouchControls extends android.widget.RelativeLayout implement
         for(PadButton b:buttons)b.setVisibility(VISIBLE);
         for(Stick s:sticks)s.setVisibility(VISIBLE);
     }
+    private boolean editMode;
+    private View moving;
+    private float dragX,dragY;
+    public void setEditMode(boolean enabled) {
+        editMode=enabled; moving=null; releaseAll();
+        state.setText(enabled ? "EDIÇÃO: arraste os controles · use SALVAR LAYOUT" : "");
+        invalidate();
+    }
+    @Override public boolean onInterceptTouchEvent(MotionEvent event) {
+        return editMode || super.onInterceptTouchEvent(event);
+    }
+    @Override public boolean onTouchEvent(MotionEvent event) {
+        if(!editMode)return super.onTouchEvent(event);
+        int action=event.getActionMasked();
+        if(action==MotionEvent.ACTION_DOWN) {
+            moving=null;
+            for(int i=getChildCount()-1;i>=0;i--) {
+                View child=getChildAt(i);
+                if(child==state || child.getVisibility()!=VISIBLE)continue;
+                if(event.getX()>=child.getLeft() && event.getX()<=child.getRight()
+                    && event.getY()>=child.getTop() && event.getY()<=child.getBottom()) {moving=child;break;}
+            }
+            dragX=event.getX();dragY=event.getY();return true;
+        }
+        if(action==MotionEvent.ACTION_MOVE && moving!=null) {
+            int dx=Math.round(event.getX()-dragX),dy=Math.round(event.getY()-dragY);
+            RelativeLayout.LayoutParams p=(RelativeLayout.LayoutParams)moving.getLayoutParams();
+            boolean right=p.getRules()[ALIGN_PARENT_RIGHT]==TRUE;
+            boolean top=p.getRules()[ALIGN_PARENT_TOP]==TRUE;
+            if(right)p.rightMargin=Math.max(0,p.rightMargin-dx);else p.leftMargin=Math.max(0,p.leftMargin+dx);
+            if(top)p.topMargin=Math.max(0,p.topMargin+dy);else p.bottomMargin=Math.max(0,p.bottomMargin-dy);
+            moving.setLayoutParams(p);dragX=event.getX();dragY=event.getY();return true;
+        }
+        if(action==MotionEvent.ACTION_UP || action==MotionEvent.ACTION_CANCEL) {
+            if(moving!=null) {
+                RelativeLayout.LayoutParams p=(RelativeLayout.LayoutParams)moving.getLayoutParams();
+                android.content.SharedPreferences.Editor edit=options(getContext()).edit();
+                if(moving instanceof PadButton) {
+                    int i=((PadButton)moving).index;
+                    edit.putInt("button_left_"+i,p.leftMargin).putInt("button_right_"+i,p.rightMargin)
+                        .putInt("button_top_"+i,p.topMargin).putInt("button_bottom_"+i,p.bottomMargin);
+                } else if(moving instanceof Stick) {
+                    int i=((Stick)moving).firstAxis;
+                    edit.putInt("stick_left_"+i,p.leftMargin).putInt("stick_right_"+i,p.rightMargin)
+                        .putInt("stick_bottom_"+i,p.bottomMargin);
+                }
+                edit.apply();
+            }
+            moving=null;return true;
+        }
+        return true;
+    }
     private int dp(float value) { return Math.round(value * getResources().getDisplayMetrics().density); }
     private void pad(String label, int index, int x, int y, boolean right, boolean top) {
         PadButton b = new PadButton(getContext(), label, index); buttons.add(b);
@@ -99,6 +151,11 @@ public final class TouchControls extends android.widget.RelativeLayout implement
         int vertical=Math.max(dp(4),dp((y+26)*positionScale)-dp(24));
         if (right) p.rightMargin = horizontal; else p.leftMargin = horizontal;
         if (top) p.topMargin = vertical; else p.bottomMargin = vertical;
+        android.content.SharedPreferences prefs=options(getContext());
+        if(prefs.contains("button_left_"+index))p.leftMargin=prefs.getInt("button_left_"+index,p.leftMargin);
+        if(prefs.contains("button_right_"+index))p.rightMargin=prefs.getInt("button_right_"+index,p.rightMargin);
+        if(prefs.contains("button_top_"+index))p.topMargin=prefs.getInt("button_top_"+index,p.topMargin);
+        if(prefs.contains("button_bottom_"+index))p.bottomMargin=prefs.getInt("button_bottom_"+index,p.bottomMargin);
         addView(b, p);
     }
     private void stick(int firstAxis, int x, int y, boolean right, int size) {
@@ -107,7 +164,12 @@ public final class TouchControls extends android.widget.RelativeLayout implement
         RelativeLayout.LayoutParams p = new RelativeLayout.LayoutParams(diameter,diameter);
         p.addRule(right ? ALIGN_PARENT_RIGHT : ALIGN_PARENT_LEFT); p.addRule(ALIGN_PARENT_BOTTOM);
         if (right) p.rightMargin = dp(x*positionScale); else p.leftMargin = dp(x*positionScale);
-        p.bottomMargin = dp(y*positionScale); addView(s, p);
+        p.bottomMargin = dp(y*positionScale);
+        android.content.SharedPreferences prefs=options(getContext());
+        if(prefs.contains("stick_left_"+firstAxis))p.leftMargin=prefs.getInt("stick_left_"+firstAxis,p.leftMargin);
+        if(prefs.contains("stick_right_"+firstAxis))p.rightMargin=prefs.getInt("stick_right_"+firstAxis,p.rightMargin);
+        if(prefs.contains("stick_bottom_"+firstAxis))p.bottomMargin=prefs.getInt("stick_bottom_"+firstAxis,p.bottomMargin);
+        addView(s, p);
     }
     @Override protected void onAttachedToWindow() {
         super.onAttachedToWindow(); active = true; inputs.registerInputDeviceListener(this, handler); refreshHardware();
