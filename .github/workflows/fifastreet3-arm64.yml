@@ -1,4 +1,4 @@
-name: Build FIFA Street 3 ARM64 (private input)
+name: Build FIFA Street 3 ARM64 (release input)
 
 on:
   workflow_dispatch:
@@ -91,7 +91,7 @@ jobs:
         if: success()
         shell: pwsh
         env:
-          GH_TOKEN: ${{ secrets.FIFA3_INPUT_TOKEN }}
+          GH_TOKEN: ${{ secrets.FIFA3_OUTPUT_TOKEN }}
         run: |
           $library = Get-ChildItem -LiteralPath ".android-work/build-fifastreet3-arm64" -Filter "libfifastreet3.so" -File -Recurse | Select-Object -First 1
           if (!$library) { throw "libfifastreet3.so was not produced." }
