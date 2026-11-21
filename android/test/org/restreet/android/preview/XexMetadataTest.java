@@ -13,7 +13,7 @@ public final class XexMetadataTest {
         data[82]=1; data[83]=1;
 
         // XEX import header: total size, string table size, library count.
-        put32(data,100,12); put32(data,104,24); put32(data,108,2);
+        put32(data,100,124); put32(data,104,24); put32(data,108,2);
         byte[] first="xam.xex".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
         byte[] second="xboxkrnl.exe".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
         System.arraycopy(first,0,data,112,first.length);
@@ -24,7 +24,7 @@ public final class XexMetadataTest {
         put32(data,168,0x12345678L); put16(data,172,0); put16(data,174,1);
         put32(data,176,0x82000000L);
         put32(data,180,44); put32(data,204,0x2222); put32(data,208,0x23456789L);
-        put32(data,212,0x23456789L); put16(data,216,8); put16(data,218,1);
+        put32(data,212,0x23456789L); put16(data,216,1); put16(data,218,1);
         put32(data,220,0x82000004L);
 
         XexMetadata parsed=XexMetadata.parse(data);
