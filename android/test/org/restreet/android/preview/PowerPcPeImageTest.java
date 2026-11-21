@@ -2,7 +2,7 @@ package org.restreet.android.preview;
 
 public final class PowerPcPeImageTest {
     public static void main(String[] args) {
-        byte[] pe=new byte[512];
+        byte[] pe=new byte[1024];
         pe[0]='M'; pe[1]='Z'; put32(pe,0x3c,0x80);
         pe[0x80]='P'; pe[0x81]='E';
         put16(pe,0x84,0x01F0); put16(pe,0x86,1); put16(pe,0x94,0xE0);
