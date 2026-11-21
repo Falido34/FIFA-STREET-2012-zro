@@ -2,6 +2,12 @@ name: Build FIFA Street 3 ARM64 (release input)
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "game-template/fifastreet3/**"
+      - "android/BuildFifaStreet3.ps1"
+      - ".github/workflows/fifastreet3-arm64.yml"
 
 permissions:
   contents: read
