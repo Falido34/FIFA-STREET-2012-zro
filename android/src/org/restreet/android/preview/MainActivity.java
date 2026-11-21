@@ -20,9 +20,10 @@ public final class MainActivity extends Activity {
     private static final int PICK_FOLDER = 43;
     private static final int PICK_ADRENO_DRIVER = 44;
     private static final int PICK_FIFA3_FOLDER = 45;
+    private static final int PICK_FIFA3_IMPORT = 46;
     private TextView status;
     private ProgressBar progress;
-    private Button importButton, folderButton, playButton, cancelButton, driverButton, systemDriverButton;
+    private Button importButton, folderButton, playButton, fifa3PlayButton, cancelButton, driverButton, systemDriverButton;
     private Spinner gpu, controls;
     private TextView driverStatus;
     private volatile boolean cancelled;
@@ -30,6 +31,8 @@ public final class MainActivity extends Activity {
     private Thread worker;
     private int dp(int n) { return Math.round(n * getResources().getDisplayMetrics().density); }
     private File data() { return new File(getFilesDir(), "GameData"); }
+    private File fifa3Data() { return new File(getFilesDir(), "FifaStreet3Data"); }
+    private boolean fifa3Ready() { return new File(fifa3Data(), ".restreet-fifa3-import-complete").isFile() && new File(fifa3Data(), "default.xex").isFile(); }
     private boolean gameReady() {
         return new File(data(), ".restreet-import-complete").isFile()
                 && new File(data(), "default.xex").isFile()
@@ -76,13 +79,20 @@ public final class MainActivity extends Activity {
             try { startActivityForResult(picker, PICK_FOLDER); }
             catch (android.content.ActivityNotFoundException e) { status.setText("Não há um seletor de pastas disponível neste telefone."); }
         }); content.addView(folderButton);
-        Button fifa3Button = new Button(this); fifa3Button.setText("ANALISAR PASTA DO FIFA STREET 3"); fifa3Button.setMinHeight(dp(48));
+        Button fifa3Button = new Button(this); fifa3Button.setText("IMPORTAR PASTA DO FIFA STREET 3"); fifa3Button.setMinHeight(dp(48));
         fifa3Button.setOnClickListener(v -> {
             Intent picker = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
             picker.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);
-            try { startActivityForResult(picker, PICK_FIFA3_FOLDER); }
+            try { startActivityForResult(picker, PICK_FIFA3_IMPORT); }
             catch (android.content.ActivityNotFoundException e) { status.setText("Não há seletor de pastas disponível neste telefone."); }
         }); content.addView(fifa3Button);
+        fifa3PlayButton = new Button(this); fifa3PlayButton.setText("JOGAR FIFA STREET 3"); fifa3PlayButton.setMinHeight(dp(52));
+        fifa3PlayButton.setOnClickListener(v -> {
+            if (!fifa3Ready() || importing) return;
+            GpuProfile selected=(GpuProfile)gpu.getSelectedItem(); int style=controls.getSelectedItemPosition();
+            getPreferences(MODE_PRIVATE).edit().putString("gpu_profile",selected.name()).putInt("controls",style).apply();
+            startActivity(new Intent(this,GameActivity.class).putExtra("game","fifastreet3").putExtra("gpu_profile",selected.name()).putExtra("controls",style));
+        }); content.addView(fifa3PlayButton);
         cancelButton = new Button(this); cancelButton.setText("CANCELAR OPERAÇÃO"); cancelButton.setVisibility(View.GONE);
         cancelButton.setOnClickListener(v -> { cancelled=true; if(worker!=null)worker.interrupt(); status.setText("Cancelando a operação…"); }); content.addView(cancelButton);
         content.addView(label("Compatibilidad de GPU"));
@@ -124,7 +134,7 @@ public final class MainActivity extends Activity {
     private TextView text(String value,int size,int color) { TextView t=new TextView(this);t.setText(value);t.setTextSize(size);t.setTextColor(color);return t; }
     private TextView label(String value) { TextView t=text(value,15,0xFFF4EEE0);t.setPadding(0,dp(16),0,dp(2));return t; }
     private void refresh() {
-        boolean ready=gameReady();playButton.setEnabled(ready&&!importing);
+        boolean ready=gameReady();playButton.setEnabled(ready&&!importing);if(fifa3PlayButton!=null)fifa3PlayButton.setEnabled(fifa3Ready()&&!importing);
         if(driverStatus!=null)driverStatus.setText(AdrenoDriverManager.selectedLabel(this));importButton.setEnabled(!importing&&!data().exists());
         folderButton.setEnabled(!importing&&!data().exists());
         gpu.setEnabled(!importing);controls.setEnabled(!importing);
@@ -148,29 +158,12 @@ public final class MainActivity extends Activity {
             },"Adreno driver importer");worker.start();
             return;
         }
-        if(request==PICK_FIFA3_FOLDER) {
-            try {
-                getContentResolver().takePersistableUriPermission(uri, intent.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            } catch (SecurityException ignored) { }
+        if(request==PICK_FIFA3_IMPORT) {
+            try { getContentResolver().takePersistableUriPermission(uri, intent.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION); }
+            catch (SecurityException ignored) { }
             cancelled=false;importing=true;refresh();
             progress.setVisibility(View.VISIBLE);progress.setIndeterminate(true);cancelButton.setVisibility(View.VISIBLE);getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            worker=new Thread(() -> {
-                String report;
-                try {
-                    runOnUiThread(() -> status.setText("Analisando os executáveis do FIFA Street 3…"));
-                    if (cancelled || Thread.currentThread().isInterrupted()) throw new IOException("Análise cancelada.");
-                    report=GameFolderInspector.inspect(this,uri);
-                } catch(Exception e) {
-                    report="Análise da pasta falhou: "+(e.getMessage()==null?e.getClass().getSimpleName():e.getMessage());
-                }
-                final String resultText=report;
-                runOnUiThread(() -> {
-                    importing=false;
-                    if(isDestroyed())return;
-                    progress.setVisibility(View.GONE);cancelButton.setVisibility(View.GONE);getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                    refresh();status.setText(resultText);
-                });
-            },"FIFA Street 3 folder inspector");worker.start();
+            worker=new Thread(() -> importFifaStreet3Folder(uri),"FIFA Street 3 folder importer");worker.start();
             return;
         }
         if(request==PICK_FOLDER) {
@@ -183,6 +176,34 @@ public final class MainActivity extends Activity {
         cancelled=false;importing=true;refresh();
         progress.setVisibility(View.VISIBLE);progress.setIndeterminate(true);cancelButton.setVisibility(View.VISIBLE);getWindow().addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         worker=new Thread(() -> importIso(uri),"ISO extractor");worker.start();
+    }
+    private void importFifaStreet3Folder(Uri uri) {
+        File staging=new File(getFilesDir(),"fifa3-stage-"+java.util.UUID.randomUUID());
+        String result;
+        try {
+            runOnUiThread(() -> status.setText("Copiando e validando FIFA Street 3…"));
+            FifaStreet3FolderImporter.importFolder(this,uri,staging,message -> {
+                if(cancelled||Thread.currentThread().isInterrupted())throw new IOException("Importação cancelada.");
+                runOnUiThread(() -> {if(!isDestroyed())status.setText(message);});
+            });
+            if(cancelled||Thread.currentThread().isInterrupted())throw new IOException("Importação cancelada.");
+            if(fifa3Data().exists()||!staging.renameTo(fifa3Data()))throw new IOException("Não foi possível salvar os dados. A pasta anterior foi preservada.");
+            result="FIFA Street 3 importado. A opção JOGAR FIFA STREET 3 foi liberada.";
+        } catch(Exception e) {
+            result="Importação do FIFA Street 3 falhou: "+(e.getMessage()==null?e.getClass().getSimpleName():e.getMessage());
+            if(staging.exists())try { removeFifa3Staging(staging); } catch(IOException cleanup) { android.util.Log.w("Fifa3Import","Falha ao limpar pasta temporária",cleanup); }
+        }
+        final String message=result;
+        runOnUiThread(() -> {
+            importing=false;if(isDestroyed())return;
+            progress.setVisibility(View.GONE);cancelButton.setVisibility(View.GONE);getWindow().clearFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            refresh();status.setText(message);
+        });
+    }
+    private void removeFifa3Staging(File stage) throws IOException {
+        File root=getFilesDir().getCanonicalFile();File target=stage.getCanonicalFile();
+        if(!root.equals(target.getParentFile())||!target.getName().startsWith("fifa3-stage-"))return;
+        removeOwned(target,root.getPath()+File.separator);
     }
     private void importGameFolder(Uri uri) {
         File staging=new File(getFilesDir(),"folder-stage-"+java.util.UUID.randomUUID());
