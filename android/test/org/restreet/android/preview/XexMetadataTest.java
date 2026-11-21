@@ -31,7 +31,7 @@ public final class XexMetadataTest {
         put32(data,220,0x82000004L);
         put32(data,224,36); put16(data,228,1); put16(data,230,2); put32(data,232,0x20000); put32(data,236,0x1000);
 
-        put32(data,0x180,0x3000); put32(data,0x184,0x1A0000);
+        put32(data,0x180,0x180); put32(data,0x184,0x1A0000);
         put32(data,0x290,0x82000000L);
         for (int i=0;i<16;i++) data[0x2D0+i]=(byte)(i+1);
 
