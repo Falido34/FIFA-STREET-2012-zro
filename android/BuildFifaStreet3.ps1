@@ -43,5 +43,23 @@ if($LASTEXITCODE -ne 0) { throw 'FIFA Street 3 Android CMake configuration faile
 if($LASTEXITCODE -ne 0) { throw 'FIFA Street 3 ARM64 native compilation failed.' }
 $library=@(Get-ChildItem -LiteralPath $build -Filter 'libfifastreet3.so' -File -Recurse | Select-Object -First 1)
 if(!$library) { throw 'CMake completed but libfifastreet3.so was not found.' }
-Write-Output "FIFA Street 3 ARM64 native library: $($library[0].FullName)"
-Write-Warning 'This builds an isolated native library only; Android APK packaging and runtime compatibility are not yet enabled.'
+
+# Collect the runtime shared libraries into a deterministic staging directory.
+# The app cannot load the game entrypoint by itself: ReXGlue runtime and Xenos
+# Vulkan backend must be shipped beside it in the APK's arm64-v8a directory.
+$runtimeStage=Join-Path $repo '.android-work/fifastreet3-apk-libs'
+if(Test-Path -LiteralPath $runtimeStage) { Remove-Item -LiteralPath $runtimeStage -Recurse -Force }
+New-Item -ItemType Directory -Force -Path $runtimeStage | Out-Null
+Copy-Item -LiteralPath $library[0].FullName -Destination (Join-Path $runtimeStage 'libfifastreet3.so')
+$runtimeRoot=Join-Path $build 'runtime'
+if(!(Test-Path -LiteralPath $runtimeRoot)) { throw "ReXGlue runtime output directory is missing: $runtimeRoot" }
+$runtimeLibraries=@(Get-ChildItem -LiteralPath $runtimeRoot -Filter '*.so' -File -Recurse)
+foreach($name in @('librexruntime.so','librexgpu-xenos.so')) {
+    $match=@($runtimeLibraries | Where-Object Name -eq $name | Select-Object -First 1)
+    if(!$match) { throw "Required FIFA Street 3 runtime dependency was not produced: $name" }
+    Copy-Item -LiteralPath $match[0].FullName -Destination (Join-Path $runtimeStage $name)
+}
+Write-Output "FIFA Street 3 ARM64 entrypoint: $($library[0].FullName)"
+Write-Output "FIFA Street 3 APK native dependencies staged: $runtimeStage"
+Get-ChildItem -LiteralPath $runtimeStage -Filter '*.so' -File | ForEach-Object { Write-Output ("APK_NATIVE_LIB=" + $_.FullName) }
+Write-Warning 'The native libraries are staged; Android activity wiring, game-folder import, and APK runtime validation remain separate steps.'
