@@ -8,6 +8,7 @@ public final class GameActivity extends SDLActivity {
     private PerformanceOverlay performance;
     private android.widget.TextView finishEditing;
     @Override protected void onCreate(android.os.Bundle saved) {
+        setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);
         try {
             android.system.Os.setenv("REX_NATIVE_LIBC_HOOKS","1",true);
             android.system.Os.setenv("REX_ADRENO_HOOK_DIR",getApplicationInfo().nativeLibraryDir,true);
@@ -35,7 +36,6 @@ public final class GameActivity extends SDLActivity {
             }
         } catch(android.system.ErrnoException e) {throw new IllegalStateException(e);}
         super.onCreate(saved);
-        setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         android.view.View decor=getWindow().getDecorView();
         android.widget.FrameLayout overlay=(android.widget.FrameLayout)decor;
         setControls(getIntent().getIntExtra("controls",1));
@@ -131,7 +131,7 @@ public final class GameActivity extends SDLActivity {
         box.setOnCheckedChangeListener((button,checked)->change.changed(checked));
     }
     @Override protected void onPause() {if(touch!=null)touch.releaseAll();if(performance!=null)performance.stop();super.onPause();}
-    @Override protected void onResume() {super.onResume();if(performance!=null)performance.start();}
+    @Override protected void onResume() {setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);super.onResume();if(performance!=null)performance.start();}
     @Override protected String[] getLibraries() {return new String[]{"c++_shared","rexruntime","touchcontrols","fifastreet"};}
     @Override protected String[] getArguments() {
         GpuProfile gpu=GpuProfile.fromName(getIntent().getStringExtra("gpu_profile"));
