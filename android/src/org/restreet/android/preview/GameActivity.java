@@ -5,6 +5,8 @@ import java.io.File;
 
 public final class GameActivity extends SDLActivity {
     private TouchControls touch;
+    private PerformanceOverlay performance;
+    private android.widget.TextView finishEditing;
     @Override protected void onCreate(android.os.Bundle saved) {
         try {
             android.system.Os.setenv("REX_NATIVE_LIBC_HOOKS","1",true);
@@ -50,9 +52,13 @@ public final class GameActivity extends SDLActivity {
             switcher.setOnClickListener(v->{
                 android.widget.PopupMenu menu=new android.widget.PopupMenu(this,switcher);
                 for(int i=0;i<TouchControls.STYLES.length;i++)menu.getMenu().add(0,i,i,TouchControls.STYLES[i]);
-                menu.getMenu().add(0,3,3,"Tamaño, transparencia y botones");
+                menu.getMenu().add(0,3,3,"Tamanho e transparência");
+                menu.getMenu().add(0,4,4,"Editar posição dos controles");
+                menu.getMenu().add(0,5,5,"Mostrar/ocultar FPS, CPU e GPU");
                 menu.setOnMenuItemClickListener(item->{
                     if(item.getItemId()==3)showControlSettings();
+                    else if(item.getItemId()==4)startControlEditing(overlay);
+                    else if(item.getItemId()==5)togglePerformanceOverlay(overlay);
                     else {setControls(item.getItemId());switcher.bringToFront();}
                     return true;
                 });
@@ -67,6 +73,31 @@ public final class GameActivity extends SDLActivity {
         android.widget.FrameLayout overlay=(android.widget.FrameLayout)getWindow().getDecorView();
         overlay.addView(touch,new android.widget.FrameLayout.LayoutParams(-1,-1));
         touch.bringToFront();
+    }
+    private void startControlEditing(android.widget.FrameLayout overlay) {
+        if(touch==null)return;
+        touch.setEditMode(true);
+        if(finishEditing!=null)overlay.removeView(finishEditing);
+        finishEditing=new android.widget.TextView(this);
+        finishEditing.setText("SALVAR LAYOUT");finishEditing.setTextColor(0xFFFFFFFF);
+        finishEditing.setTextSize(14);finishEditing.setGravity(android.view.Gravity.CENTER);
+        finishEditing.setPadding(24,12,24,12);
+        android.graphics.drawable.GradientDrawable bg=new android.graphics.drawable.GradientDrawable();
+        bg.setColor(0xDD246B45);bg.setCornerRadius(24*getResources().getDisplayMetrics().density);
+        finishEditing.setBackground(bg);finishEditing.setElevation(1200f);
+        android.widget.FrameLayout.LayoutParams lp=new android.widget.FrameLayout.LayoutParams(-2,-2,android.view.Gravity.BOTTOM|android.view.Gravity.CENTER_HORIZONTAL);
+        lp.bottomMargin=Math.round(18*getResources().getDisplayMetrics().density);
+        overlay.addView(finishEditing,lp);
+        finishEditing.setOnClickListener(v->{touch.setEditMode(false);overlay.removeView(finishEditing);finishEditing=null;});
+        finishEditing.bringToFront();
+    }
+    private void togglePerformanceOverlay(android.widget.FrameLayout overlay) {
+        if(performance!=null) {overlay.removeView(performance);performance.stop();performance=null;return;}
+        performance=new PerformanceOverlay(this);
+        android.widget.FrameLayout.LayoutParams lp=new android.widget.FrameLayout.LayoutParams(-2,-2,android.view.Gravity.TOP|android.view.Gravity.RIGHT);
+        lp.topMargin=Math.round(58*getResources().getDisplayMetrics().density);
+        lp.rightMargin=Math.round(10*getResources().getDisplayMetrics().density);
+        overlay.addView(performance,lp);performance.start();performance.bringToFront();
     }
     private void showControlSettings() {
         touch.releaseAll();
@@ -99,7 +130,8 @@ public final class GameActivity extends SDLActivity {
         android.widget.CheckBox box=new android.widget.CheckBox(this);box.setText(name);box.setChecked(value);parent.addView(box);
         box.setOnCheckedChangeListener((button,checked)->change.changed(checked));
     }
-    @Override protected void onPause() {if(touch!=null)touch.releaseAll();super.onPause();}
+    @Override protected void onPause() {if(touch!=null)touch.releaseAll();if(performance!=null)performance.stop();super.onPause();}
+    @Override protected void onResume() {super.onResume();if(performance!=null)performance.start();}
     @Override protected String[] getLibraries() {return new String[]{"c++_shared","rexruntime","touchcontrols","fifastreet"};}
     @Override protected String[] getArguments() {
         GpuProfile gpu=GpuProfile.fromName(getIntent().getStringExtra("gpu_profile"));
