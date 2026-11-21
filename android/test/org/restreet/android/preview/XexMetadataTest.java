@@ -13,7 +13,7 @@ public final class XexMetadataTest {
         data[82]=1; data[83]=1;
 
         // XEX import header: total size, string table size, library count.
-        put32(data,100,124); put32(data,104,24); put32(data,108,2);
+        put32(data,100,12); put32(data,104,24); put32(data,108,2);
         byte[] first="xam.xex".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
         byte[] second="xboxkrnl.exe".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
         System.arraycopy(first,0,data,112,first.length);
@@ -36,6 +36,8 @@ public final class XexMetadataTest {
         check("xam.xex".equals(parsed.importLibraries.get(0).name),"wrong first library");
         check("xboxkrnl.exe".equals(parsed.importLibraries.get(1).name),"wrong second library");
         check(parsed.importLibraries.get(0).importCount==1,"wrong first import count");
+        check(parsed.importLibraries.get(0).thunkAddresses.size()==1,"wrong thunk address count");
+        check(parsed.importLibraries.get(0).thunkAddresses.get(0)==0x82000000L,"wrong thunk address");
         check("1.2.13398.120".equals(parsed.importLibraries.get(0).version),"wrong version decode");
 
         byte[] malformed=new byte[24];
