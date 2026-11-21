@@ -2,9 +2,9 @@ package org.restreet.android.preview;
 
 public final class XexMetadataTest {
     public static void main(String[] args) {
-        byte[] data = new byte[256];
+        byte[] data = new byte[768];
         data[0]='X'; data[1]='E'; data[2]='X'; data[3]='2';
-        put32(data,8,0x2000); put32(data,16,0x80); put32(data,20,5);
+        put32(data,8,0x2000); put32(data,16,0x180); put32(data,20,5);
         put32(data,24,0x00040006L); put32(data,28,64);
         put32(data,32,0x000103FFL); put32(data,36,100);
         put32(data,40,0x00010100L); put32(data,44,0x82001000L);
@@ -29,7 +29,11 @@ public final class XexMetadataTest {
         put32(data,180,44); put32(data,204,0x2222); put32(data,208,0x23456789L);
         put32(data,212,0x23456789L); put16(data,216,1); put16(data,218,1);
         put32(data,220,0x82000004L);
-        put32(data,224,12); put16(data,228,1); put16(data,230,2); put32(data,232,0x20000);
+        put32(data,224,36); put16(data,228,1); put16(data,230,2); put32(data,232,0x20000); put32(data,236,0x1000);
+
+        put32(data,0x180,0x3000); put32(data,0x184,0x1A0000);
+        put32(data,0x290,0x82000000L);
+        for (int i=0;i<16;i++) data[0x2D0+i]=(byte)(i+1);
 
         XexMetadata parsed=XexMetadata.parse(data);
         check(parsed.xex2,"XEX2 header not recognized");
@@ -51,6 +55,12 @@ public final class XexMetadataTest {
         check("AES".equals(parsed.encryptionName()),"wrong encryption type");
         check("normal (LZX)".equals(parsed.compressionName()),"wrong compression type");
         check(parsed.lzxWindowSize==0x20000,"wrong LZX window size");
+        check(parsed.firstLzxBlockSize==0x1000,"wrong first LZX block size");
+        check(parsed.firstLzxBlockHashPresent,"first LZX block hash not detected");
+        check(parsed.securityInfoValid,"security info not validated");
+        check(parsed.imageSize==0x1A0000,"wrong PE image size");
+        check(parsed.loadAddress==0x82000000L,"wrong security load address");
+        check(parsed.encryptedImageKeyPresent,"encrypted AES session key not detected");
 
         byte[] malformed=new byte[24];
         malformed[0]='X'; malformed[1]='E'; malformed[2]='X'; malformed[3]='2';
