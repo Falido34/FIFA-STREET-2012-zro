@@ -63,6 +63,8 @@ jobs:
           java -cp build-check org.restreet.android.preview.XexMetadataTest
           javac -encoding UTF-8 -classpath "build-check" -d build-check android/src/org/restreet/android/preview/PowerPcPeImage.java android/test/org/restreet/android/preview/PowerPcPeImageTest.java
           java -cp build-check org.restreet.android.preview.PowerPcPeImageTest
+          javac -encoding UTF-8 -classpath "build-check" -d build-check android/src/org/restreet/android/preview/PeImportDirectory.java android/test/org/restreet/android/preview/PeImportDirectoryTest.java
+          java -cp build-check org.restreet.android.preview.PeImportDirectoryTest
 
       - name: Compile Adreno driver ZIP importer
         run: javac -encoding UTF-8 -classpath "$ANDROID_HOME/platforms/android-35/android.jar" -d build-check android/src/org/restreet/android/preview/AdrenoDriverManager.java
