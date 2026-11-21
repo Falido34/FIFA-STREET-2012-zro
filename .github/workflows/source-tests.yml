@@ -34,6 +34,9 @@ jobs:
       - name: Test Android Java ISO parser
         run: python -m unittest discover -s android -p "test_public_iso.py" -v
 
+      - name: Test isolated FIFA Street 3 native profile
+        run: python -m unittest discover -s android -p "test_fifastreet3_profile.py" -v
+
   folder-import-compile:
     runs-on: ubuntu-latest
     steps:
