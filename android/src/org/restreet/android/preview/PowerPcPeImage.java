@@ -6,7 +6,7 @@ import java.util.List;
 
 /** Bounds-checked validator for a decompressed Xbox 360 PowerPC PE32 image. */
 public final class PowerPcPeImage {
-    public static final int MACHINE_POWERPC = 0x01F0;
+    public static final int MACHINE_POWERPC = 0x01F0;\n    public static final int MACHINE_POWERPC_BE = 0x01F2;
     public static final class Section {
         public final String name;
         public final long virtualSize, virtualAddress, rawSize, rawOffset, characteristics;
@@ -22,7 +22,7 @@ public final class PowerPcPeImage {
 
     private PowerPcPeImage(boolean ok,String err,int mach,int count,long entry,long base,
                            long size,long headers,List<Section> list) {
-        valid=ok; error=err; machine=mach; powerPc=mach==MACHINE_POWERPC;
+        valid=ok; error=err; machine=mach; powerPc=mach==MACHINE_POWERPC || mach==MACHINE_POWERPC_BE;
         sectionCount=count; pe32=true; entryPoint=entry; imageBase=base;
         imageSize=size; headersSize=headers;
         sections=Collections.unmodifiableList(list);
@@ -57,7 +57,7 @@ public final class PowerPcPeImage {
             if (va>imageSize || vs>imageSize-va) return bad("Endereço virtual da seção "+name+" fora da imagem.");
             sections.add(new Section(name,vs,va,rs,ro,ch));
         }
-        if (machine!=MACHINE_POWERPC) return new PowerPcPeImage(false,
+        if (machine!=MACHINE_POWERPC && machine!=MACHINE_POWERPC_BE) return new PowerPcPeImage(false,
                 "Máquina PE não é PowerPC Xbox 360.",machine,count,entry,base,imageSize,headers,sections);
         return new PowerPcPeImage(true,"",machine,count,entry,base,imageSize,headers,sections);
     }
