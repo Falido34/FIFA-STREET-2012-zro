@@ -50,11 +50,19 @@ public final class GameFolderInspector {
             if (m.discCount > 0) report.append("Disco: ").append(m.discNumber).append(" de ").append(m.discCount).append("\n");
             report.append("Cabeçalho XEX: 0x").append(Long.toHexString(m.headerSize).toUpperCase(Locale.ROOT)).append("\n");
             report.append("Security info: 0x").append(Long.toHexString(m.securityInfoOffset).toUpperCase(Locale.ROOT)).append("\n");
+            report.append("Security info válida: ").append(m.securityInfoValid ? "sim" : "não confirmada").append("\n");
+            if (m.imageSize > 0) report.append("Tamanho da imagem PE: ").append(m.imageSize).append(" bytes\n");
+            if (m.loadAddress > 0) report.append("Load address: 0x").append(Long.toHexString(m.loadAddress).toUpperCase(Locale.ROOT)).append("\n");
+            report.append("Chave AES de sessão presente: ").append(m.encryptedImageKeyPresent ? "sim (protegida)" : "não detectada").append("\n");
             if (m.entryPoint >= 0) report.append("Entry point: 0x").append(Long.toHexString(m.entryPoint).toUpperCase(Locale.ROOT)).append("\n");
             if (m.imageBase >= 0) report.append("Image base: 0x").append(Long.toHexString(m.imageBase).toUpperCase(Locale.ROOT)).append("\n");
             report.append("Formato da imagem PE: ").append(m.encryptionName()).append(" / ").append(m.compressionName()).append("\n");
             if (m.compressionType == 2 && m.lzxWindowSize > 0)
                 report.append("Janela LZX: ").append(m.lzxWindowSize).append(" bytes\n");
+            if (m.compressionType == 2) {
+                if (m.firstLzxBlockSize > 0) report.append("Primeiro bloco LZX: ").append(m.firstLzxBlockSize).append(" bytes\n");
+                report.append("Hash do primeiro bloco LZX: ").append(m.firstLzxBlockHashPresent ? "presente" : "não encontrado").append("\n");
+            }
             report.append("Bibliotecas importadas: ").append(m.importLibraries.size()).append("\n");
             for (XexMetadata.ImportLibrary library : m.importLibraries) {
                 report.append("  - ").append(library.name)
