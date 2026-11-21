@@ -30,7 +30,7 @@ public final class GameFolderInspector {
         State state = new State(resolver, tree);
         Uri root = DocumentsContract.buildDocumentUriUsingTree(tree, rootId);
         walk(state, root, "", 0);
-        Collections.sort(state.modules);
+        Collections.sort(state.modules, (left, right) -> left.path.compareToIgnoreCase(right.path));
         StringBuilder report = new StringBuilder();
         report.append("Análise da pasta do FIFA Street 3\n");
         report.append("Arquivos examinados: ").append(state.entries).append("\n");
