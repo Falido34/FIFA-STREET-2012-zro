@@ -17,6 +17,8 @@ public final class PowerPcPeImageTest {
         PowerPcPeImage parsed=PowerPcPeImage.parse(pe);
         check(parsed.valid,"valid PPC PE rejected: "+parsed.error);
         check(parsed.powerPc,"PowerPC machine not recognized");
+        byte[] bigEndianPpc=pe.clone(); put16(bigEndianPpc,0x84,0x01F2);
+        check(PowerPcPeImage.parse(bigEndianPpc).valid,"PowerPC big-endian PE rejected");
         check(parsed.entryPoint==0x1000,"entry point mismatch");
         check(parsed.imageBase==0x82000000L,"image base mismatch");
         check(parsed.sections.size()==1 && ".text".equals(parsed.sections.get(0).name),"section parse failed");
