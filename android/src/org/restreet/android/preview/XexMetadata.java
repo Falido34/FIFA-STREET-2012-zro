@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-/** Bounds-checked reader for XEX2 execution info and import-library tables. */
+/** Bounds-checked reader for XEX2 metadata; does not decrypt or decompress the PE image. */
 public final class XexMetadata {
     public static final class ImportLibrary {
         public final String name, version, minVersion;
@@ -17,54 +17,75 @@ public final class XexMetadata {
         }
     }
 
-    public final boolean xex2, executionInfoFound;
+    public final boolean xex2, executionInfoFound, fileFormatFound;
     public final String titleId, mediaId, version, baseVersion, gameName;
-    public final int discNumber, discCount;
+    public final int discNumber, discCount, encryptionType, compressionType;
+    public final long headerSize, securityInfoOffset, entryPoint, imageBase, lzxWindowSize;
     public final List<ImportLibrary> importLibraries;
 
     private XexMetadata(boolean valid, boolean found, String title, String media,
                         String version, String base, int disc, int discs, String name,
-                        List<ImportLibrary> imports) {
+                        List<ImportLibrary> imports, boolean formatFound, int encryption,
+                        int compression, long header, long security, long entry, long image,
+                        long window) {
         xex2=valid; executionInfoFound=found; titleId=title; mediaId=media;
         this.version=version; baseVersion=base; discNumber=disc; discCount=discs;
         gameName=name; importLibraries=Collections.unmodifiableList(imports);
+        fileFormatFound=formatFound; encryptionType=encryption; compressionType=compression;
+        headerSize=header; securityInfoOffset=security; entryPoint=entry;
+        imageBase=image; lzxWindowSize=window;
     }
 
     public static XexMetadata parse(byte[] b) {
         if (b == null || b.length < 24 || b[0]!='X' || b[1]!='E' || b[2]!='X' || b[3]!='2')
             return empty(false);
-        long count=u32(b,20);
+        long header=u32(b,8), security=u32(b,16), count=u32(b,20);
         if (count > 4096 || 24L+count*8L > b.length) return empty(true);
         String title="", media="", version="", base="", name="";
-        int disc=0, discs=0;
-        boolean found=false;
+        int disc=0, discs=0, encryption=-1, compression=-1;
+        long entry=-1, image=-1, window=0;
+        boolean found=false, formatFound=false;
         List<ImportLibrary> imports=Collections.emptyList();
         for (int i=0;i<(int)count;i++) {
             int p=24+i*8;
-            long key=u32(b,p), offset=u32(b,p+4);
-            if (key==0x00040006L && offset <= b.length-24) {
-                int o=(int)offset;
+            long key=u32(b,p), value=u32(b,p+4);
+            if (key==0x00040006L && value <= b.length-24) {
+                int o=(int)value;
                 media=hex32(b,o); version=hex32(b,o+4); base=hex32(b,o+8);
                 title=hex32(b,o+12); disc=b[o+18]&255; discs=b[o+19]&255;
                 name=title.equals("4541083B") ? "FIFA Street 3"
                         : title.equals("4541097B") ? "FIFA Street (2012)" : "";
                 found=true;
-            } else if (key==0x000103FFL && offset <= b.length-12) {
-                imports=parseImportLibraries(b,(int)offset);
+            } else if (key==0x000103FFL && value <= b.length-12) {
+                imports=parseImportLibraries(b,(int)value);
+            } else if (key==0x000003FFL && value <= b.length-8) {
+                int o=(int)value;
+                long size=u32(b,o);
+                if (size>=8 && size<=b.length-o) {
+                    encryption=u16(b,o+4);
+                    compression=u16(b,o+6);
+                    if (compression==2 && size>=12) window=u32(b,o+8);
+                    formatFound=true;
+                }
+            } else if (key==0x00010100L) {
+                entry=value;
+            } else if (key==0x00010201L) {
+                image=value;
             }
         }
-        return new XexMetadata(true,found,title,media,version,base,disc,discs,name,imports);
+        return new XexMetadata(true,found,title,media,version,base,disc,discs,name,
+                imports,formatFound,encryption,compression,header,security,entry,image,window);
     }
 
     private static XexMetadata empty(boolean valid) {
-        return new XexMetadata(valid,false,"","","","",0,0,"",new ArrayList<ImportLibrary>());
+        return new XexMetadata(valid,false,"","","","",0,0,"",
+                new ArrayList<ImportLibrary>(),false,-1,-1,0,0,-1,-1,0);
     }
 
     private static List<ImportLibrary> parseImportLibraries(byte[] b,int offset) {
         long totalSize=u32(b,offset), stringSize=u32(b,offset+4), libraryCount=u32(b,offset+8);
         if (totalSize < 12 || totalSize > b.length-offset || libraryCount > 32
                 || stringSize > totalSize-12) return Collections.emptyList();
-
         int stringsStart=offset+12;
         int stringsEnd=(int)(stringsStart+stringSize);
         List<String> names=new ArrayList<>();
@@ -77,7 +98,6 @@ public final class XexMetadata {
             names.add(new String(b,cursor,end-cursor,java.nio.charset.StandardCharsets.US_ASCII));
             cursor=(end+4)&~3;
         }
-
         long record=(long)stringsEnd;
         long tableEnd=(long)offset+totalSize;
         List<ImportLibrary> result=new ArrayList<>();
@@ -97,6 +117,20 @@ public final class XexMetadata {
         return result;
     }
 
+    public String encryptionName() {
+        if (!fileFormatFound) return "não informado";
+        if (encryptionType==0) return "nenhuma";
+        if (encryptionType==1) return "AES";
+        return "desconhecida ("+encryptionType+")";
+    }
+    public String compressionName() {
+        if (!fileFormatFound) return "não informado";
+        if (compressionType==0) return "nenhuma";
+        if (compressionType==1) return "basic";
+        if (compressionType==2) return "normal (LZX)";
+        if (compressionType==3) return "delta";
+        return "desconhecida ("+compressionType+")";
+    }
     private static String formatVersion(long v) {
         return ((v>>>28)&15)+"."+((v>>>24)&15)+"."+((v>>>8)&65535)+"."+(v&255);
     }
