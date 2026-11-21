@@ -63,6 +63,20 @@ public final class PowerPcPeImage {
         return new PowerPcPeImage(true,"",machine,count,entry,base,imageSize,headers,sections);
     }
 
+    /** Maps an RVA to its on-disk offset in the supplied PE file, or -1 if unmapped. */
+    public long fileOffsetForRva(long rva, int fileLength) {
+        if (!valid || rva < 0 || fileLength < 0) return -1;
+        if (rva < headersSize) return rva < fileLength ? rva : -1;
+        for (Section section : sections) {
+            long delta = rva - section.virtualAddress;
+            if (delta >= 0 && delta < section.rawSize) {
+                long offset = section.rawOffset + delta;
+                return range(offset, 1, fileLength) ? offset : -1;
+            }
+        }
+        return -1;
+    }
+
     private static PowerPcPeImage bad(String e) {
         return new PowerPcPeImage(false,e,0,0,0,0,0,0,new ArrayList<Section>());
     }
