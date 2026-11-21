@@ -6,7 +6,10 @@ public final class XexMetadataTest {
         data[0]='X'; data[1]='E'; data[2]='X'; data[3]='2';
         put32(data,8,0x2000); put32(data,16,0x80); put32(data,20,5);
         put32(data,24,0x00040006L); put32(data,28,64);
-        put32(data,32,0x000103FFL); put32(data,36,100);\n        put32(data,40,0x00010100L); put32(data,44,0x82001000L);\n        put32(data,48,0x00010201L); put32(data,52,0x82000000L);\n        put32(data,56,0x000003FFL); put32(data,60,224);
+        put32(data,32,0x000103FFL); put32(data,36,100);
+        put32(data,40,0x00010100L); put32(data,44,0x82001000L);
+        put32(data,48,0x00010201L); put32(data,52,0x82000000L);
+        put32(data,56,0x000003FFL); put32(data,60,224);
 
         put32(data,64,0x78AA9072L);
         put32(data,68,3); put32(data,72,3); put32(data,76,0x4541083BL);
@@ -25,7 +28,8 @@ public final class XexMetadataTest {
         put32(data,176,0x82000000L);
         put32(data,180,44); put32(data,204,0x2222); put32(data,208,0x23456789L);
         put32(data,212,0x23456789L); put16(data,216,1); put16(data,218,1);
-        put32(data,220,0x82000004L);\n        put32(data,224,12); put16(data,228,1); put16(data,230,2); put32(data,232,0x20000);
+        put32(data,220,0x82000004L);
+        put32(data,224,12); put16(data,228,1); put16(data,230,2); put32(data,232,0x20000);
 
         XexMetadata parsed=XexMetadata.parse(data);
         check(parsed.xex2,"XEX2 header not recognized");
