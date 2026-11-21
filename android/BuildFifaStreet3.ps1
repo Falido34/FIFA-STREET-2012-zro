@@ -25,12 +25,15 @@ if(!(Test-Path -LiteralPath $Generator -PathType Leaf)) {
 if(!(Test-Path -LiteralPath $Generator -PathType Leaf)) {
     throw "ReXGlue host generator was not produced: $Generator"
 }
+# Stage the independent project before codegen. The generator writes a
+# game-specific manifest into $output; staging afterwards would overwrite it
+# with the template placeholder and break the CMake-triggered codegen step.
+$template=Join-Path $repo 'game-template/fifastreet3'
+New-Item -ItemType Directory -Force -Path $output | Out-Null
+Copy-Item -Path (Join-Path $template '*') -Destination $output -Recurse -Force
+
 & "$PSScriptRoot/GenerateFifaStreet3.ps1" -GameData $GameData -Generator $Generator -OutputRoot $output
 if($LASTEXITCODE -ne 0) { throw 'FIFA Street 3 code generation failed.' }
-
-# Stage the independent project files without touching generated/default.
-$template=Join-Path $repo 'game-template/fifastreet3'
-Copy-Item -Path (Join-Path $template '*') -Destination $output -Recurse -Force
 if(!(Test-Path -LiteralPath (Join-Path $output 'generated/default/sources.cmake'))) {
     throw 'Validated ReXGlue entrypoint sources are missing after staging.'
 }
