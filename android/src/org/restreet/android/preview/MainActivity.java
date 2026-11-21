@@ -38,16 +38,26 @@ public final class MainActivity extends Activity {
     @Override public void onCreate(Bundle saved) {
         super.onCreate(saved);
         getWindow().setStatusBarColor(0xFF121818); getWindow().setNavigationBarColor(0xFF121818);
-        LinearLayout root = new LinearLayout(this); root.setOrientation(LinearLayout.HORIZONTAL); root.setBackgroundColor(0xFF121818);
+        // Dark Moon portrait launcher: use the bundled cover as a full-screen backdrop.
+        android.widget.FrameLayout root = new android.widget.FrameLayout(this);
+        root.setBackgroundColor(0xFF08090D);
         ImageView cover = new ImageView(this);
         cover.setImageResource(getResources().getIdentifier("cover", "drawable", getPackageName()));
-        cover.setScaleType(ImageView.ScaleType.CENTER_CROP); cover.setContentDescription("Portada FIFA Street con Messi");
-        root.addView(cover, new LinearLayout.LayoutParams(0, -1, 0.40f));
+        cover.setScaleType(ImageView.ScaleType.CENTER_CROP);
+        cover.setContentDescription("Fundo FIFA Street");
+        root.addView(cover, new android.widget.FrameLayout.LayoutParams(-1, -1));
+        View shade = new View(this); shade.setBackgroundColor(0xCC08090D);
+        root.addView(shade, new android.widget.FrameLayout.LayoutParams(-1, -1));
         ScrollView scroll = new ScrollView(this); scroll.setFillViewport(true);
-        LinearLayout content = new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL); content.setPadding(dp(24),dp(20),dp(24),dp(24));
-        scroll.addView(content); root.addView(scroll,new LinearLayout.LayoutParams(0,-1,0.60f));
-        TextView title = text("FIFA STREET", 30, 0xFFF4EEE0); title.setTypeface(Typeface.create("sans-serif-condensed",Typeface.BOLD)); content.addView(title);
-        content.addView(text("0.1 · Android", 14, 0xFFD6B477));
+        scroll.setBackgroundColor(Color.TRANSPARENT);
+        LinearLayout content = new LinearLayout(this); content.setOrientation(LinearLayout.VERTICAL);
+        content.setPadding(dp(22),dp(28),dp(22),dp(28));
+        scroll.addView(content);
+        root.addView(scroll, new android.widget.FrameLayout.LayoutParams(-1, -1));
+        TextView title = text("FIFA STREET", 34, 0xFFF4EEE0); title.setTypeface(Typeface.create("sans-serif-condensed",Typeface.BOLD)); content.addView(title);
+        TextView edition = text("DARK MOON  /  ANDROID", 12, 0xFFE05252); edition.setTypeface(Typeface.DEFAULT_BOLD); content.addView(edition);
+        content.addView(text("0.1 · VERTICAL EDITION", 13, 0xFFD6B477));
+
         TextView guide = text("Selecione a ISO compatível ou importe a pasta do jogo (Xbox 360 · Title ID 4541097B · Media ID 78AA9072).",15,0xFFDEE4DF);
         guide.setPadding(0,dp(14),0,dp(8)); content.addView(guide);
         status = text("",14,0xFFDEE4DF); status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE); content.addView(status);
@@ -71,6 +81,8 @@ public final class MainActivity extends Activity {
         gpu = new Spinner(this); ArrayAdapter<GpuProfile> profiles = new ArrayAdapter<>(this,android.R.layout.simple_spinner_item,GpuProfile.values());
         profiles.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);gpu.setAdapter(profiles);gpu.setContentDescription("Compatibilidad de GPU");
         gpu.setSelection(GpuProfile.fromName(getPreferences(MODE_PRIVATE).getString("gpu_profile","MALI")).ordinal());content.addView(gpu,new LinearLayout.LayoutParams(-1,dp(48)));
+        TextView runtimeInfo = text("FPS / CPU: disponíveis durante o jogo · GPU e driver selecionados abaixo", 11, 0xFFB8B2B0);
+        runtimeInfo.setPadding(0,dp(4),0,dp(4)); content.addView(runtimeInfo);
         content.addView(label("Driver Vulkan Adreno (opcional)"));
         driverStatus=text("",13,0xFFBDCFC5);driverStatus.setText(AdrenoDriverManager.selectedLabel(this));content.addView(driverStatus);
         driverButton=new Button(this);driverButton.setText("IMPORTAR DRIVER ADRENO (ZIP)");driverButton.setMinHeight(dp(48));
@@ -90,7 +102,7 @@ public final class MainActivity extends Activity {
         styles.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);controls.setAdapter(styles);controls.setContentDescription("Estilo de controles táctiles");
         controls.setSelection(Math.max(0,Math.min(2,getPreferences(MODE_PRIVATE).getInt("controls",1))));content.addView(controls,new LinearLayout.LayoutParams(-1,dp(48)));
         content.addView(text("Mando Bluetooth ou USB: pode usar junto com os controles táteis, que continuam visíveis.",13,0xFFBDCFC5));
-        playButton=new Button(this);playButton.setText("JUGAR");playButton.setTextColor(Color.WHITE);playButton.setBackgroundTintList(new android.content.res.ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{android.R.attr.state_pressed},new int[]{}},new int[]{0xFF38444D,0xFF15334D,0xFF24577D}));playButton.setMinHeight(dp(52));
+        playButton=new Button(this);playButton.setText("JOGAR");playButton.setTextColor(Color.WHITE);playButton.setBackgroundTintList(new android.content.res.ColorStateList(new int[][]{new int[]{-android.R.attr.state_enabled},new int[]{android.R.attr.state_pressed},new int[]{}},new int[]{0xFF38444D,0xFF8F2028,0xFFB52B35}));playButton.setMinHeight(dp(56));
         LinearLayout.LayoutParams playLayout=new LinearLayout.LayoutParams(-1,dp(52));playLayout.topMargin=dp(16);content.addView(playButton,playLayout);
         playButton.setOnClickListener(v -> {
             if (!gameReady() || importing) return;
