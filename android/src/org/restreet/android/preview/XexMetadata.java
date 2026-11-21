@@ -61,40 +61,42 @@ public final class XexMetadata {
     }
 
     private static List<ImportLibrary> parseImportLibraries(byte[] b,int offset) {
-        long headerSize=u32(b,offset), stringSize=u32(b,offset+4), libraryCount=u32(b,offset+8);
-        if (headerSize < 12 || headerSize > 64 || headerSize > b.length-offset
-                || libraryCount > 256 || stringSize > b.length-offset-headerSize)
-            return Collections.emptyList();
-        int stringsStart=(int)(offset+headerSize);
-        int recordsStart=(int)(stringsStart+stringSize);
-        List<ImportLibrary> result=new ArrayList<>();
-        long record=recordsStart;
+        long totalSize=u32(b,offset), stringSize=u32(b,offset+4), libraryCount=u32(b,offset+8);
+        if (totalSize < 12 || totalSize > b.length-offset || libraryCount > 32
+                || stringSize > totalSize-12) return Collections.emptyList();
+
+        int stringsStart=offset+12;
+        int stringsEnd=(int)(stringsStart+stringSize);
+        List<String> names=new ArrayList<>();
+        int cursor=stringsStart;
         for(int i=0;i<(int)libraryCount;i++) {
-            if(record > b.length-40) return Collections.emptyList();
+            if(cursor>=stringsEnd) return Collections.emptyList();
+            int end=cursor;
+            while(end<stringsEnd && b[end]!=0) end++;
+            if(end==stringsEnd) return Collections.emptyList();
+            names.add(new String(b,cursor,end-cursor,java.nio.charset.StandardCharsets.US_ASCII));
+            cursor=(end+4)&~3;
+        }
+
+        long record=(long)stringsEnd;
+        long tableEnd=(long)offset+totalSize;
+        List<ImportLibrary> result=new ArrayList<>();
+        for(int i=0;i<(int)libraryCount;i++) {
+            if(record>tableEnd-40) return Collections.emptyList();
             int p=(int)record;
             long size=u32(b,p);
-            int imports=u16(b,p+38), nameIndex=u16(b,p+36);
-            if(size < 40L+imports*4L || size > b.length-record || nameIndex >= stringSize)
+            int nameIndex=u16(b,p+36), imports=u16(b,p+38);
+            if(size<40L+imports*4L || size>tableEnd-record || nameIndex>=names.size())
                 return Collections.emptyList();
-            String libraryName=readCString(b,stringsStart+nameIndex,recordsStart);
-            if(libraryName==null || libraryName.isEmpty()) return Collections.emptyList();
             List<Long> thunks=new ArrayList<>();
             for(int n=0;n<imports;n++) thunks.add(u32(b,p+40+n*4));
-            long version=u32(b,p+28), minVersion=u32(b,p+32);
-            result.add(new ImportLibrary(libraryName,formatVersion(version),
-                    formatVersion(minVersion),imports,thunks));
-            record += size;
+            result.add(new ImportLibrary(names.get(nameIndex),formatVersion(u32(b,p+28)),
+                    formatVersion(u32(b,p+32)),imports,thunks));
+            record+=size;
         }
         return result;
     }
 
-    private static String readCString(byte[] b,int start,int limit) {
-        if(start<0 || start>=limit || limit>b.length) return null;
-        int end=start;
-        while(end<limit && b[end]!=0) end++;
-        if(end==limit) return null;
-        return new String(b,start,end-start,java.nio.charset.StandardCharsets.US_ASCII);
-    }
     private static String formatVersion(long v) {
         return ((v>>>28)&15)+"."+((v>>>24)&15)+"."+((v>>>8)&65535)+"."+(v&255);
     }
