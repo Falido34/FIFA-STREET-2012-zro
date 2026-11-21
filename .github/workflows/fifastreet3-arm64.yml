@@ -118,6 +118,12 @@ jobs:
           $library = Get-ChildItem -LiteralPath ".android-work/build-fifastreet3-arm64" -Filter "libfifastreet3.so" -File -Recurse | Select-Object -First 1
           if (!$library) { throw "libfifastreet3.so was not produced." }
           $files = @($library.FullName)
+          $nativeStage = ".android-work/fifastreet3-apk-libs"
+          foreach ($name in @("libfifastreet3.so","librexruntime.so","librexgpu-xenos.so")) {
+            $native = Join-Path $nativeStage $name
+            if (!(Test-Path -LiteralPath $native)) { throw "Required Android native dependency is missing: $native" }
+            $files += (Resolve-Path -LiteralPath $native).Path
+          }
           $log = ".android-work/fifastreet3/codegen.log"
           if (Test-Path -LiteralPath $log) { $files += (Resolve-Path -LiteralPath $log).Path }
           $tag = "fifa3-native-$env:GITHUB_RUN_NUMBER"
