@@ -22,7 +22,7 @@ foreach($path in @($native,$source,(Join-Path $source 'thirdparty/sdl3/android-p
     if(!(Test-Path -LiteralPath $path)){throw "Required FIFA Street 3 APK input is missing: $path"}
 }
 New-Item -ItemType Directory -Force -Path "$work/classes","$work/dex","$work/lib/arm64-v8a","$repo/dist" | Out-Null
-$names=@('libfifastreet3.so','librexruntime.so','librexgpu-xenos.so')
+$names=@('libSDL3.so','libfifastreet3.so','librexruntime.so','librexgpu-xenos.so')
 foreach($name in $names) {
     $file=Join-Path $native $name
     if(!(Test-Path -LiteralPath $file)){throw "Missing FIFA Street 3 native library: $file"}
