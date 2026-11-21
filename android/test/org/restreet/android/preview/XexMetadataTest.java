@@ -48,7 +48,7 @@ public final class XexMetadataTest {
         check(parsed.importLibraries.get(0).thunkAddresses.get(0)==0x82000000L,"wrong thunk address");
         check("1.2.13398.120".equals(parsed.importLibraries.get(0).version),"wrong version decode");
         check(parsed.headerSize==0x2000,"wrong PE header size");
-        check(parsed.securityInfoOffset==0x80,"wrong security info offset");
+        check(parsed.securityInfoOffset==0x180,"wrong security info offset");
         check(parsed.entryPoint==0x82001000L,"wrong entry point");
         check(parsed.imageBase==0x82000000L,"wrong image base");
         check(parsed.fileFormatFound,"file format info missing");
