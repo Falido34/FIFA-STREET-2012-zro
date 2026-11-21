@@ -108,7 +108,7 @@ public final class GameFolderInspector {
 
     private static void validateName(String name) throws IOException {
         if (name == null || name.isEmpty() || name.equals(".") || name.equals("..")
-                || name.indexOf('/') >= 0 || name.indexOf('\\\\') >= 0)
+                || name.indexOf('/') >= 0 || name.indexOf('\\') >= 0)
             throw new IOException("A pasta contém um nome inválido.");
     }
 
