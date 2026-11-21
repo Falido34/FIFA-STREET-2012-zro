@@ -59,7 +59,7 @@ public final class MainActivity extends Activity {
         TextView edition = text("DARK MOON  /  ANDROID", 12, 0xFFE05252); edition.setTypeface(Typeface.DEFAULT_BOLD); content.addView(edition);
         content.addView(text("0.1 · VERTICAL EDITION", 13, 0xFFD6B477));
 
-        TextView guide = text("Selecione a ISO compatível ou importe a pasta do jogo (Xbox 360 · Title ID 4541097B · Media ID 78AA9072).",15,0xFFDEE4DF);
+        TextView guide = text("Selecione uma ISO compatível ou analise a pasta extraída de um jogo Xbox 360. A identificação do jogo selecionado aparece no relatório da análise.",15,0xFFDEE4DF);
         guide.setPadding(0,dp(14),0,dp(8)); content.addView(guide);
         status = text("",14,0xFFDEE4DF); status.setAccessibilityLiveRegion(View.ACCESSIBILITY_LIVE_REGION_POLITE); content.addView(status);
         progress = new ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal); progress.setVisibility(View.GONE); content.addView(progress,new LinearLayout.LayoutParams(-1,dp(12)));
