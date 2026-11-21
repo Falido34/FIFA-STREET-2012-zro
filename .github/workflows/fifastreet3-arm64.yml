@@ -56,36 +56,28 @@ jobs:
           New-Item -ItemType Junction -Path $w64devkit -Target $mingw | Out-Null
           "FIFA_TOOLS=$tools" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
 
-      - name: Download private FIFA Street 3 input
+      - name: Download FIFA Street 3 input release
         shell: pwsh
-        env:
-          FIFA3_INPUT_TOKEN: ${{ secrets.FIFA3_INPUT_TOKEN }}
         run: |
-          if ([string]::IsNullOrWhiteSpace($env:FIFA3_INPUT_TOKEN)) {
-            throw "Missing secret FIFA3_INPUT_TOKEN. Add a fine-grained token with read-only Contents access to the private input repository."
-          }
-          $token = $env:FIFA3_INPUT_TOKEN.Trim()
-          $headers = @{ Authorization = "Bearer $token"; Accept = "application/vnd.github+json"; "X-GitHub-Api-Version" = "2022-11-28" }
-          $repo = "Falido34/FIFA-STREET-2012-input"
-          $meta = Invoke-RestMethod -Headers $headers -Uri "https://api.github.com/repos/$repo"
-          if ($meta.private -ne $true) { throw "Input repository must be PRIVATE. Refusing to download game files from a public repository." }
-          $zipUrl = "https://api.github.com/repos/$repo/contents/4541083B.zip"
-          $file = Invoke-RestMethod -Headers $headers -Uri $zipUrl
-          if ($file.type -ne "file" -or !$file.download_url) { throw "4541083B.zip was not found at the root of the private input repository." }
           $zipPath = Join-Path $env:RUNNER_TEMP "4541083B.zip"
-          Invoke-WebRequest -Headers $headers -Uri $file.download_url -OutFile $zipPath
+          $url = "https://github.com/Falido34/FIFA-STREET-2012-files./releases/download/FIFA3/4541083B.zip"
+          Invoke-WebRequest -Uri $url -OutFile $zipPath
           $gameData = Join-Path $env:GITHUB_WORKSPACE ".android-work/GameData"
           New-Item -ItemType Directory -Force -Path $gameData | Out-Null
           Expand-Archive -LiteralPath $zipPath -DestinationPath $gameData -Force
           if (!(Test-Path -LiteralPath (Join-Path $gameData "default.xex"))) {
             $nested = Get-ChildItem -LiteralPath $gameData -Filter default.xex -File -Recurse | Select-Object -First 1
             if (!$nested) { throw "ZIP does not contain default.xex." }
-            $root = $nested.Directory.FullName
-            Get-ChildItem -LiteralPath $root -Force | Copy-Item -Destination $gameData -Recurse -Force
+            Get-ChildItem -LiteralPath $nested.Directory.FullName -Force | Copy-Item -Destination $gameData -Recurse -Force
           }
-          $magic = [Text.Encoding]::ASCII.GetString([IO.File]::ReadAllBytes((Join-Path $gameData "default.xex"))[0..3])
-          if ($magic -ne "XEX2") { throw "default.xex does not have a valid XEX2 signature." }
-          Write-Output "Private input received and XEX2 header validated."
+          $xex = Join-Path $gameData "default.xex"
+          $stream = [IO.File]::OpenRead($xex)
+          try {
+            $header = New-Object byte[] 4
+            if ($stream.Read($header,0,4) -ne 4) { throw "default.xex is truncated." }
+            if ([Text.Encoding]::ASCII.GetString($header) -ne "XEX2") { throw "default.xex does not have a valid XEX2 signature." }
+          } finally { $stream.Dispose() }
+          Write-Output "Release ZIP downloaded and XEX2 header validated."
 
       - name: Build ReXGlue host generator
         shell: pwsh
@@ -107,5 +99,5 @@ jobs:
           $log = ".android-work/fifastreet3/codegen.log"
           if (Test-Path -LiteralPath $log) { $files += (Resolve-Path -LiteralPath $log).Path }
           $tag = "fifa3-native-$env:GITHUB_RUN_NUMBER"
-          gh release create $tag @files --repo "Falido34/FIFA-STREET-2012-input" --title "FIFA Street 3 native build $env:GITHUB_RUN_NUMBER" --notes "Private ARM64 build output. Generated game code and binaries are not published in the public source repository." --prerelease
-          if ($LASTEXITCODE -ne 0) { throw "Could not publish the build to the private input repository." }
+          gh release create $tag @files --repo "Falido34/FIFA-STREET-2012-output" --title "FIFA Street 3 native build $env:GITHUB_RUN_NUMBER" --notes "Private ARM64 build output. Generated game code and binaries are not published in the public source repository." --prerelease
+          if ($LASTEXITCODE -ne 0) { throw "Could not publish the build to the private output repository." }
