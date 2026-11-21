@@ -39,6 +39,13 @@ class FifaStreet3ProfileTest(unittest.TestCase):
         self.assertIn("--target fifastreet3", script)
         self.assertIn("libfifastreet3.so", script)
 
+    def test_build_script_stages_template_before_game_specific_codegen(self):
+        script = self.read("android/BuildFifaStreet3.ps1")
+        stage = script.index("Copy-Item -Path (Join-Path $template '*')")
+        codegen = script.index("GenerateFifaStreet3.ps1")
+        self.assertLess(stage, codegen)
+        self.assertIn("would overwrite it", script)
+
 
 if __name__ == "__main__":
     unittest.main()
