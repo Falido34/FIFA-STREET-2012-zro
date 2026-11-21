@@ -59,6 +59,11 @@ foreach($name in @('librexruntime.so','librexgpu-xenos.so')) {
     if(!$match) { throw "Required FIFA Street 3 runtime dependency was not produced: $name" }
     Copy-Item -LiteralPath $match[0].FullName -Destination (Join-Path $runtimeStage $name)
 }
+# SDLActivity requires SDL3's JNI bridge to be loaded before calling SDL_main.
+$sdl=@(Get-ChildItem -LiteralPath $build -Filter 'libSDL3.so' -File -Recurse | Select-Object -First 1)
+if(!$sdl) { throw 'SDL3 Android shared library (libSDL3.so) was not produced; cannot start SDLActivity.' }
+Copy-Item -LiteralPath $sdl[0].FullName -Destination (Join-Path $runtimeStage 'libSDL3.so')
+
 Write-Output "FIFA Street 3 ARM64 entrypoint: $($library[0].FullName)"
 Write-Output "FIFA Street 3 APK native dependencies staged: $runtimeStage"
 Get-ChildItem -LiteralPath $runtimeStage -Filter '*.so' -File | ForEach-Object { Write-Output ("APK_NATIVE_LIB=" + $_.FullName) }
