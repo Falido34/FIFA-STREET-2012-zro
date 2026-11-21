@@ -133,7 +133,7 @@ public final class GameActivity extends SDLActivity {
     @Override protected void onPause() {if(touch!=null)touch.releaseAll();if(performance!=null)performance.stop();super.onPause();}
     @Override protected void onResume() {setRequestedOrientation(android.content.pm.ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE);super.onResume();if(performance!=null)performance.start();}
     private boolean isFifa3() { return "fifastreet3".equals(getIntent().getStringExtra("game")); }
-    @Override protected String[] getLibraries() {return isFifa3() ? new String[]{"c++_shared","rexruntime","rexgpu-xenos","touchcontrols","fifastreet3"} : new String[]{"c++_shared","rexruntime","touchcontrols","fifastreet"};}
+    @Override protected String[] getLibraries() {return isFifa3() ? new String[]{"SDL3","c++_shared","rexruntime","rexgpu-xenos","touchcontrols","fifastreet3"} : new String[]{"c++_shared","rexruntime","touchcontrols","fifastreet"};}
     @Override protected String[] getArguments() {
         GpuProfile gpu=GpuProfile.fromName(getIntent().getStringExtra("gpu_profile"));
         return new String[]{
