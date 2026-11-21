@@ -100,7 +100,7 @@ public final class GameActivity extends SDLActivity {
         box.setOnCheckedChangeListener((button,checked)->change.changed(checked));
     }
     @Override protected void onPause() {if(touch!=null)touch.releaseAll();super.onPause();}
-    @Override protected String[] getLibraries() {return new String[]{"c++_shared","rexruntime","fifastreet"};}
+    @Override protected String[] getLibraries() {return new String[]{"c++_shared","rexruntime","touchcontrols","fifastreet"};}
     @Override protected String[] getArguments() {
         GpuProfile gpu=GpuProfile.fromName(getIntent().getStringExtra("gpu_profile"));
         return new String[]{
