@@ -7,6 +7,8 @@ import android.net.Uri;
 import android.provider.DocumentsContract;
 import java.io.IOException;
 import java.io.InputStream;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -36,8 +38,18 @@ public final class GameFolderInspector {
         report.append("Arquivos examinados: ").append(state.entries).append("\n");
         report.append("Executáveis XEX/DLL: ").append(state.modules.size()).append("\n");
         report.append("default.xex na raiz: ").append(state.rootDefault ? "encontrado" : "NÃO encontrado").append("\n");
-        report.append("Cabeçalhos XEX2 válidos: ").append(state.validXex).append("\n\n");
-        report.append("Módulos encontrados:\n");
+        report.append("Cabeçalhos XEX2 válidos: ").append(state.validXex).append("\n");
+        if (state.defaultMetadata != null) {
+            XexMetadata m = state.defaultMetadata;
+            report.append("Identificação pelo default.xex: ");
+            report.append(m.gameName.isEmpty() ? "não confirmada" : m.gameName).append("\n");
+            report.append("Title ID: ").append(m.titleId.isEmpty() ? "não encontrado" : m.titleId).append("\n");
+            if (!m.mediaId.isEmpty()) report.append("Media ID: ").append(m.mediaId).append("\n");
+            if (!m.version.isEmpty()) report.append("Versão XEX: ").append(m.version).append(" / base ").append(m.baseVersion).append("\n");
+            if (m.discCount > 0) report.append("Disco: ").append(m.discNumber).append(" de ").append(m.discCount).append("\n");
+            if (!state.defaultSha256.isEmpty()) report.append("SHA-256 default.xex: ").append(state.defaultSha256).append("\n");
+        }
+        report.append("\nMódulos encontrados:\n");
         if (state.modules.isEmpty()) report.append("Nenhum arquivo .xex ou .dll encontrado.\n");
         int shown = Math.min(40, state.modules.size());
         for (int i = 0; i < shown; i++) {
@@ -83,12 +95,37 @@ public final class GameFolderInspector {
                         long size = cursor.isNull(sizeCol) ? -1 : cursor.getLong(sizeCol);
                         boolean valid = hasXex2(state.resolver, child);
                         if (valid) state.validXex++;
+                        if (path.equalsIgnoreCase("default.xex")) readDefaultMetadata(state, child);
                         state.modules.add(new Module(path, size, valid));
                     }
                 }
             }
         } catch (SecurityException e) {
             throw new IOException("Sem permissão para ler a pasta selecionada.", e);
+        }
+    }
+
+    private static void readDefaultMetadata(State state, Uri file) throws IOException {
+        try (InputStream in = state.resolver.openInputStream(file)) {
+            if (in == null) throw new IOException("Não foi possível ler default.xex.");
+            MessageDigest digest;
+            try { digest = MessageDigest.getInstance("SHA-256"); }
+            catch (NoSuchAlgorithmException e) { throw new IOException("SHA-256 indisponível.", e); }
+            ByteArrayOutputStream header = new ByteArrayOutputStream(65536);
+            byte[] buffer = new byte[32768];
+            int count;
+            while ((count = in.read(buffer)) != -1) {
+                digest.update(buffer, 0, count);
+                if (header.size() < 1024 * 1024) {
+                    int keep = Math.min(count, 1024 * 1024 - header.size());
+                    header.write(buffer, 0, keep);
+                }
+            }
+            byte[] hash = digest.digest();
+            StringBuilder hex = new StringBuilder(64);
+            for (byte value : hash) hex.append(String.format(Locale.ROOT, "%02x", value & 255));
+            state.defaultSha256 = hex.toString();
+            state.defaultMetadata = XexMetadata.parse(header.toByteArray());
         }
     }
 
@@ -119,6 +156,8 @@ public final class GameFolderInspector {
         int entries;
         int validXex;
         boolean rootDefault;
+        XexMetadata defaultMetadata;
+        String defaultSha256 = "";
         State(ContentResolver resolver, Uri tree) { this.resolver = resolver; this.tree = tree; }
     }
 
