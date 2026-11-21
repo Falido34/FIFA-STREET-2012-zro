@@ -1,7 +1,7 @@
 from pathlib import Path
 import unittest
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = next(parent for parent in Path(__file__).resolve().parents if (parent / "game-template").is_dir())
 
 
 class FifaStreet3ProfileTest(unittest.TestCase):
