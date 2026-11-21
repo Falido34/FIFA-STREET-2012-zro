@@ -26,9 +26,9 @@ public final class TouchControls extends android.widget.RelativeLayout implement
     private boolean physical;
     private final Runnable retry = new Runnable() {
         @Override public void run() {
-            if (!active || physical) return;
+            if (!active) return;
             ready = connect();
-            state.setText(ready ? "" : "Preparando controles…");
+            state.setText(ready ? "" : (physical ? "Mando conectado · iniciando controles táteis…" : "Preparando controles…"));
             if (!ready) handler.postDelayed(this, 500);
         }
     };
@@ -130,7 +130,8 @@ public final class TouchControls extends android.widget.RelativeLayout implement
         handler.removeCallbacks(retry); releaseAll();
         for (PadButton b : buttons) b.setVisibility(VISIBLE);
         for (Stick s : sticks) s.setVisibility(VISIBLE);
-        if (physical) state.setText("Mando conectado · controles táteis ativos");
+        if (physical) state.setText("Mando conectado · controles táteis também ativos");
+        else state.setText("Preparando controles…");
         if (active) handler.post(retry);
     }
     @Override public void onInputDeviceAdded(int id) { refreshHardware(); }
@@ -149,7 +150,6 @@ public final class TouchControls extends android.widget.RelativeLayout implement
             setText(""); setContentDescription(label + " · " + buttonName(index));
             setTooltipText(label);
             setBackgroundColor(Color.TRANSPARENT); setMinHeight(0); setMinWidth(0); setPadding(0,0,0,0);
-            setOnClickListener(v -> { if (!isPressed()) { send(index, true); handler.postDelayed(() -> send(index, false), 90); } });
         }
         void release() { send(index, false); setPressed(false); invalidate(); }
         @Override public boolean onTouchEvent(android.view.MotionEvent e) {
