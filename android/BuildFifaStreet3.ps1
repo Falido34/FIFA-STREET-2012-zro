@@ -18,6 +18,13 @@ foreach($tool in @($cmake,$ninja,(Join-Path $ndk 'build/cmake/android.toolchain.
 }
 if(!(Test-Path -LiteralPath $source)) { throw "ReXGlue SDK source is missing: $source" }
 if(!$Generator) { $Generator=Join-Path $source 'out/win-amd64/rexglue.exe' }
+if(!(Test-Path -LiteralPath $Generator -PathType Leaf)) {
+    & "$PSScriptRoot/BuildHostGenerator.ps1" -ToolsRoot $ToolsRoot -Jobs $Jobs
+    if($LASTEXITCODE -ne 0) { throw 'ReXGlue host generator build failed.' }
+}
+if(!(Test-Path -LiteralPath $Generator -PathType Leaf)) {
+    throw "ReXGlue host generator was not produced: $Generator"
+}
 & "$PSScriptRoot/GenerateFifaStreet3.ps1" -GameData $GameData -Generator $Generator -OutputRoot $output
 if($LASTEXITCODE -ne 0) { throw 'FIFA Street 3 code generation failed.' }
 
