@@ -57,7 +57,7 @@ jobs:
       - name: Compile SAF game folder importer
         run: |
           mkdir -p build-check
-          javac -encoding UTF-8 -classpath "$ANDROID_HOME/platforms/android-35/android.jar" -d build-check android/src/org/restreet/android/preview/GameFolderImporter.java
+          javac -encoding UTF-8 -classpath "$ANDROID_HOME/platforms/android-35/android.jar" -d build-check android/src/org/restreet/android/preview/GameFolderImporter.java\n          javac -encoding UTF-8 -classpath "$ANDROID_HOME/platforms/android-35/android.jar" -d build-check android/src/org/restreet/android/preview/GameFolderInspector.java
 
       - name: Compile Adreno driver ZIP importer
         run: javac -encoding UTF-8 -classpath "$ANDROID_HOME/platforms/android-35/android.jar" -d build-check android/src/org/restreet/android/preview/AdrenoDriverManager.java
