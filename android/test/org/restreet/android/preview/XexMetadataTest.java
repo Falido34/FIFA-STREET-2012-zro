@@ -2,7 +2,7 @@ package org.restreet.android.preview;
 
 public final class XexMetadataTest {
     public static void main(String[] args) {
-        byte[] data = new byte[180];
+        byte[] data = new byte[224];
         data[0]='X'; data[1]='E'; data[2]='X'; data[3]='2';
         put32(data,20,2);
         put32(data,24,0x00040006L); put32(data,28,64);
@@ -12,19 +12,31 @@ public final class XexMetadataTest {
         put32(data,68,3); put32(data,72,3); put32(data,76,0x4541083BL);
         data[82]=1; data[83]=1;
 
-        put32(data,100,72); put32(data,104,16); put32(data,108,1);
-        byte[] name="xboxkrnl.exe".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
-        System.arraycopy(name,0,data,112,name.length);
-        put32(data,128,44);
-        data[166]=0; data[167]=1; // one import descriptor in this library
+        // XEX import header: total size, string table size, library count.
+        put32(data,100,124); put32(data,104,24); put32(data,108,2);
+        byte[] first="xam.xex".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        byte[] second="xboxkrnl.exe".getBytes(java.nio.charset.StandardCharsets.US_ASCII);
+        System.arraycopy(first,0,data,112,first.length);
+        System.arraycopy(second,0,data,120,second.length);
+
+        // Xex2ImportLibrary records: size, digest, id, versions, name index, import count.
+        put32(data,136,44); put32(data,160,0x1111); put32(data,164,0x12345678L);
+        put32(data,168,0x12345678L); put16(data,172,0); put16(data,174,1);
+        put32(data,176,0x82000000L);
+        put32(data,180,44); put32(data,204,0x2222); put32(data,208,0x23456789L);
+        put32(data,212,0x23456789L); put16(data,216,8); put16(data,218,1);
+        put32(data,220,0x82000004L);
 
         XexMetadata parsed=XexMetadata.parse(data);
         check(parsed.xex2,"XEX2 header not recognized");
         check(parsed.executionInfoFound,"execution info not parsed");
         check("4541083B".equals(parsed.titleId),"wrong title ID");
         check("FIFA Street 3".equals(parsed.gameName),"wrong game name");
-        check(parsed.importLibraries.size()==1,"import library count mismatch");
-        check("xboxkrnl.exe".equals(parsed.importLibraries.get(0)),"import library name mismatch");
+        check(parsed.importLibraries.size()==2,"import library count mismatch");
+        check("xam.xex".equals(parsed.importLibraries.get(0).name),"wrong first library");
+        check("xboxkrnl.exe".equals(parsed.importLibraries.get(1).name),"wrong second library");
+        check(parsed.importLibraries.get(0).importCount==1,"wrong first import count");
+        check("1.2.13398.120".equals(parsed.importLibraries.get(0).version),"wrong version decode");
 
         byte[] malformed=new byte[24];
         malformed[0]='X'; malformed[1]='E'; malformed[2]='X'; malformed[3]='2';
@@ -33,6 +45,9 @@ public final class XexMetadataTest {
         System.out.println("XEX metadata and import-library tests passed");
     }
 
+    private static void put16(byte[] b,int p,int value) {
+        b[p]=(byte)(value>>>8); b[p+1]=(byte)value;
+    }
     private static void put32(byte[] b,int p,long value) {
         b[p]=(byte)(value>>>24); b[p+1]=(byte)(value>>>16);
         b[p+2]=(byte)(value>>>8); b[p+3]=(byte)value;
