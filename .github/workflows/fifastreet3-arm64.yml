@@ -109,23 +109,12 @@ jobs:
         shell: pwsh
         run: ./android/BuildFifaStreet3.ps1 -GameData "$env:GITHUB_WORKSPACE/.android-work/GameData" -ToolsRoot "$env:FIFA_TOOLS" -Jobs 4
 
-      - name: Publish build privately
-        if: success()
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ secrets.FIFA3_OUTPUT_TOKEN }}
-        run: |
-          $library = Get-ChildItem -LiteralPath ".android-work/build-fifastreet3-arm64" -Filter "libfifastreet3.so" -File -Recurse | Select-Object -First 1
-          if (!$library) { throw "libfifastreet3.so was not produced." }
-          $files = @($library.FullName)
-          $nativeStage = ".android-work/fifastreet3-apk-libs"
-          foreach ($name in @("libfifastreet3.so","librexruntime.so","librexgpu-xenos.so")) {
-            $native = Join-Path $nativeStage $name
-            if (!(Test-Path -LiteralPath $native)) { throw "Required Android native dependency is missing: $native" }
-            $files += (Resolve-Path -LiteralPath $native).Path
-          }
-          $log = ".android-work/fifastreet3/codegen.log"
-          if (Test-Path -LiteralPath $log) { $files += (Resolve-Path -LiteralPath $log).Path }
-          $tag = "fifa3-native-$env:GITHUB_RUN_NUMBER"
-          gh release create $tag @files --repo "Falido34/FIFA-STREET-2012-output" --title "FIFA Street 3 native build $env:GITHUB_RUN_NUMBER" --notes "Private ARM64 build output. Generated game code and binaries are not published in the public source repository." --prerelease
-          if ($LASTEXITCODE -ne 0) { throw "Could not publish the build to the private output repository." }
+      - name: Upload FIFA Street 3 ARM64 native package
+        uses: actions/upload-artifact@v4
+        with:
+          name: FIFA-STREET-3-ARM64-native
+          path: |
+            .android-work/fifastreet3-apk-libs/*.so
+            .android-work/fifastreet3/codegen.log
+          if-no-files-found: error
+          retention-days: 30
