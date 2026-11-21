@@ -49,6 +49,11 @@ public final class PeImportDirectory {
         long importRva = u32(bytes, o + 104), importSize = u32(bytes, o + 108);
         if (importRva == 0 && importSize == 0) return new PeImportDirectory(true, "", new ArrayList<Library>());
         if (importRva == 0 || importSize < 20) return bad("Diretório de importação inconsistente.");
+        long importOffset = image.fileOffsetForRva(importRva, bytes.length);
+        if (importOffset < 0 || importSize > bytes.length - importOffset)
+            return bad("Diretório de importação excede os dados disponíveis.");
+        long mappedBytes = mappedRawBytes(image, importRva);
+        if (mappedBytes < importSize) return bad("Diretório de importação excede a seção PE mapeada.");
         long descriptorCount = Math.min(importSize / 20, 4096);
         List<Library> libraries = new ArrayList<>();
         boolean terminated = false;
@@ -88,6 +93,14 @@ public final class PeImportDirectory {
         return new PeImportDirectory(true, "", libraries);
     }
 
+    private static long mappedRawBytes(PowerPcPeImage image, long rva) {
+        if (rva < image.headersSize) return image.headersSize - rva;
+        for (PowerPcPeImage.Section section : image.sections) {
+            long delta = rva - section.virtualAddress;
+            if (delta >= 0 && delta < section.rawSize) return section.rawSize - delta;
+        }
+        return 0;
+    }
     private static long readRva32(byte[] b, PowerPcPeImage image, long rva) {
         long off = image.fileOffsetForRva(rva, b.length);
         return off >= 0 && range(off, 4, b.length) ? u32(b, (int)off) : -1;
