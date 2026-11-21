@@ -74,11 +74,25 @@ public final class PerformanceOverlay extends TextView implements Choreographer.
     }
     private int readGpu(){
         long[] now=readGpuCounters();
-        if(now==null)return -1;
+        if(now==null)return readDirectGpuLoad();
         if(gpuPrevious==null){gpuPrevious=now;return -1;}
         long busy=now[0]-gpuPrevious[0],total=now[1]-gpuPrevious[1];gpuPrevious=now;
         if(total<=0||busy<0)return -1;
         return (int)Math.max(0,Math.min(100,Math.round(100.0*busy/total)));
+    }
+    private int readDirectGpuLoad(){
+        File root=new File("/sys/class/devfreq");
+        File[] entries=root.listFiles();
+        if(entries!=null)for(File entry:entries){
+            if(!entry.getName().toLowerCase(java.util.Locale.ROOT).contains("gpu"))continue;
+            for(String leaf:new String[]{"gpu_busy_percent","load"}){
+                try(BufferedReader r=new BufferedReader(new FileReader(new File(entry,leaf)))){
+                    String value=r.readLine().trim().replace("%","");
+                    int n=Integer.parseInt(value);if(n>=0&&n<=100)return n;
+                }catch(Exception ignored){}
+            }
+        }
+        return -1;
     }
     private long[] readGpuCounters(){
         String[] paths={"/sys/class/kgsl/kgsl-3d0/gpubusy","/sys/class/kgsl/kgsl-3d0/gpu_busy"};
@@ -86,7 +100,6 @@ public final class PerformanceOverlay extends TextView implements Choreographer.
             try(BufferedReader r=new BufferedReader(new FileReader(path))){
                 String[] v=r.readLine().trim().split("\\s+");
                 if(v.length>=2)return new long[]{Long.parseLong(v[0]),Long.parseLong(v[1])};
-                if(v.length==1)return new long[]{Long.parseLong(v[0]),100};
             }catch(Exception ignored){}
         }
         File root=new File("/sys/class/devfreq");
