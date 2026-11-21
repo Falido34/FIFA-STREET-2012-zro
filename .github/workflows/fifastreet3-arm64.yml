@@ -58,13 +58,19 @@ jobs:
 
       - name: Download FIFA Street 3 input release
         shell: pwsh
+        env:
+          FIFA3_INPUT_TOKEN: ${{ secrets.FIFA3_INPUT_TOKEN }}
         run: |
           $zipPath = Join-Path $env:RUNNER_TEMP "4541083B.zip"
-          # Download by immutable GitHub release-asset ID. The repository name
-          # ends with a dot, which can make the browser_download_url return 404.
-          $assetUrl = "https://api.github.com/repos/Falido34/FIFA-STREET-2012-files%2E/releases/assets/775976091"
+          # The source repository is private. Authenticate with a read-only token
+          # and address it by numeric repository ID to avoid the trailing-dot slug.
+          if ([string]::IsNullOrWhiteSpace($env:FIFA3_INPUT_TOKEN)) {
+            throw "Missing repository secret FIFA3_INPUT_TOKEN (read access to FIFA-STREET-2012-files.)."
+          }
+          $assetUrl = "https://api.github.com/repositories/1464730946/releases/assets/775976091"
           $headers = @{
             Accept = "application/octet-stream"
+            Authorization = "Bearer $env:FIFA3_INPUT_TOKEN"
             "X-GitHub-Api-Version" = "2022-11-28"
             "User-Agent" = "FIFA-Street-3-Android-Build"
           }
