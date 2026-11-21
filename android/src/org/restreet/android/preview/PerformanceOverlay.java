@@ -16,7 +16,6 @@ public final class PerformanceOverlay extends TextView {
     private final Handler handler=new Handler(Looper.getMainLooper());
     private boolean running;
     private RandomAccessFile log;
-    private long lastFrameCount=-1,lastFrameTime;
     private long lastCpuTime=-1,lastWallTime;
     private long lastGpuBusy=-1,lastGpuTotal=-1;
     private int fps=-1,cpu=-1,gpu=-1;
@@ -46,7 +45,7 @@ public final class PerformanceOverlay extends TextView {
         running=true;
         lastCpuTime=Process.getElapsedCpuTime();
         lastWallTime=SystemClock.elapsedRealtime();
-        lastGpuBusy=-1;lastGpuTotal=-1;lastFrameCount=-1;fps=-1;
+        lastGpuBusy=-1;lastGpuTotal=-1;fps=-1;
         openGameLog();
         handler.post(sample);
     }
@@ -76,18 +75,17 @@ public final class PerformanceOverlay extends TextView {
             if(file.length()<log.getFilePointer())log.seek(0);
             String line;
             while((line=log.readLine())!=null){
-                int marker=line.indexOf("GAME_FRAME_COUNT ");
+                int marker=line.indexOf("Guest frame timing: ");
                 if(marker<0)continue;
-                String value=line.substring(marker+17).trim().split("\\s+")[0];
-                long count=Long.parseLong(value);
-                long now=SystemClock.elapsedRealtime();
-                if(lastFrameCount>=0&&count>=lastFrameCount&&now>lastFrameTime){
-                    fps=(int)Math.max(0,Math.min(300,Math.round((count-lastFrameCount)*1000.0/(now-lastFrameTime))));
-                }
-                lastFrameCount=count;lastFrameTime=now;
+                int start=marker+"Guest frame timing: ".length();
+                int end=line.indexOf(" FPS average",start);
+                if(end<=start)continue;
+                double value=Double.parseDouble(line.substring(start,end).trim());
+                if(Double.isFinite(value)&&value>=0.0)
+                    fps=(int)Math.max(0,Math.min(300,Math.round(value)));
             }
             return fps;
-        }catch(Exception e){return -1;}
+        }catch(Exception e){return fps;}
     }
 
     private int readCpu(){
