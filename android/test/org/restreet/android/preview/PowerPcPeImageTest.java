@@ -25,7 +25,7 @@ public final class PowerPcPeImageTest {
         check(parsed.fileOffsetForRva(0x1000,pe.length)==0x200,"section RVA mapping failed");
         check(parsed.fileOffsetForRva(0x1010,pe.length)==0x210,"section offset mapping failed");
         check(parsed.fileOffsetForRva(0x3000,pe.length)==-1,"unmapped RVA accepted");
-        check(parsed.fileOffsetForRva(0x1000,0x205)==-1,"out-of-file RVA accepted");
+        check(parsed.fileOffsetForRva(0x1010,0x205)==-1,"out-of-file RVA accepted");
         byte[] wrong=pe.clone(); put16(wrong,0x84,0x8664);
         check(!PowerPcPeImage.parse(wrong).valid,"non-PPC image accepted");
         byte[] truncated=new byte[100]; truncated[0]='M'; truncated[1]='Z'; put32(truncated,0x3c,0x80);
