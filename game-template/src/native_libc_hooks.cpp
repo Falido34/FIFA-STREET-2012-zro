@@ -11,6 +11,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <atomic>
 
 #include <rex/hook.h>
 
@@ -101,6 +102,12 @@ REX_HOOK_RAW(sub_82613E70) {
   }();
   static bool logged_original[256] = {};
   const uint32_t rate = ctx.r4.u32;
+  // Count the game's gameplay/replay frame limiter ticks for the Android HUD.
+  static std::atomic<uint64_t> game_frame_count{0};
+  if (rate == 60 || rate == 40) {
+    const uint64_t count = game_frame_count.fetch_add(1, std::memory_order_relaxed) + 1;
+    if ((count % 30) == 0) REXKRNL_INFO("GAME_FRAME_COUNT {}", count);
+  }
   if (rate < 256 && !logged_original[rate]) {
     logged_original[rate] = true;
     REXKRNL_INFO("Frame limiter call: game rate {} Hz, minimum {} Hz", rate, min_rate);
