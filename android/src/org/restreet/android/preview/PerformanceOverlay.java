@@ -126,10 +126,9 @@ public final class PerformanceOverlay extends TextView {
 
     private int readDirectGpuLoad(){
         String[] paths={"/sys/class/kgsl/kgsl-3d0/gpu_busy_percent",
-            "/sys/class/devfreq/ kgsl-3d0/gpu_busy_percent"};
+            "/sys/class/devfreq/kgsl-3d0/gpu_busy_percent"};
         for(String path:paths){
-            if(path.indexOf(' ')>=0)continue;
-            try(BufferedReader r=new BufferedReader(new FileReader(path))){
+            try(BufferedReader r=new BufferedReader(new FileReader(path)){
                 String value=r.readLine().trim().replace("%","");
                 if(value.matches("[0-9]{1,3}")){
                     int n=Integer.parseInt(value);if(n>=0&&n<=100)return n;
