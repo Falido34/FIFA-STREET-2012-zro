@@ -18,7 +18,8 @@ import java.util.List;
 public final class MainActivity extends Activity {
     private static final int PICK_ISO = 42;
     private static final int PICK_FOLDER = 43;
-    private static final int PICK_ADRENO_DRIVER = 44;\n    private static final int PICK_FIFA3_FOLDER = 45;
+    private static final int PICK_ADRENO_DRIVER = 44;
+    private static final int PICK_FIFA3_FOLDER = 45;
     private TextView status;
     private ProgressBar progress;
     private Button importButton, folderButton, playButton, cancelButton, driverButton, systemDriverButton;
