@@ -20,20 +20,22 @@ public final class XexMetadata {
     public final boolean xex2, executionInfoFound, fileFormatFound;
     public final String titleId, mediaId, version, baseVersion, gameName;
     public final int discNumber, discCount, encryptionType, compressionType;
-    public final long headerSize, securityInfoOffset, entryPoint, imageBase, lzxWindowSize;
+    public final long headerSize, securityInfoOffset, entryPoint, imageBase, lzxWindowSize, firstLzxBlockSize, imageSize, loadAddress;
+    public final boolean encryptedImageKeyPresent, securityInfoValid, firstLzxBlockHashPresent;
     public final List<ImportLibrary> importLibraries;
 
     private XexMetadata(boolean valid, boolean found, String title, String media,
                         String version, String base, int disc, int discs, String name,
                         List<ImportLibrary> imports, boolean formatFound, int encryption,
                         int compression, long header, long security, long entry, long image,
-                        long window) {
+                        long window, long firstBlock, long peSize, long load, boolean keyPresent, boolean securityValid, boolean hashPresent) {
         xex2=valid; executionInfoFound=found; titleId=title; mediaId=media;
         this.version=version; baseVersion=base; discNumber=disc; discCount=discs;
         gameName=name; importLibraries=Collections.unmodifiableList(imports);
         fileFormatFound=formatFound; encryptionType=encryption; compressionType=compression;
         headerSize=header; securityInfoOffset=security; entryPoint=entry;
-        imageBase=image; lzxWindowSize=window;
+        imageBase=image; lzxWindowSize=window; firstLzxBlockSize=firstBlock; imageSize=peSize; loadAddress=load;
+        encryptedImageKeyPresent=keyPresent; securityInfoValid=securityValid; firstLzxBlockHashPresent=hashPresent;
     }
 
     public static XexMetadata parse(byte[] b) {
@@ -43,7 +45,8 @@ public final class XexMetadata {
         if (count > 4096 || 24L+count*8L > b.length) return empty(true);
         String title="", media="", version="", base="", name="";
         int disc=0, discs=0, encryption=-1, compression=-1;
-        long entry=-1, image=-1, window=0;
+        long entry=-1, image=-1, window=0, firstBlock=0, peSize=0, load=0;
+        boolean keyPresent=false, securityValid=false, hashPresent=false;
         boolean found=false, formatFound=false;
         List<ImportLibrary> imports=Collections.emptyList();
         for (int i=0;i<(int)count;i++) {
@@ -65,6 +68,8 @@ public final class XexMetadata {
                     encryption=u16(b,o+4);
                     compression=u16(b,o+6);
                     if (compression==2 && size>=12) window=u32(b,o+8);
+                    if (compression==2 && size>=16) firstBlock=u32(b,o+12);
+                    hashPresent = compression==2 && size>=36;
                     formatFound=true;
                 }
             } else if (key==0x00010100L) {
@@ -73,13 +78,22 @@ public final class XexMetadata {
                 image=value;
             }
         }
+        if (security > 0 && security <= b.length - 0x160L) {
+            int sec=(int)security;
+            long secHeader=u32(b,sec);
+            peSize=u32(b,sec+4);
+            load=u32(b,sec+0x110);
+            securityValid=secHeader>0 && secHeader<=b.length && peSize>0;
+            for (int i=0;i<16;i++) if (b[sec+0x150+i]!=0) { keyPresent=true; break; }
+        }
         return new XexMetadata(true,found,title,media,version,base,disc,discs,name,
-                imports,formatFound,encryption,compression,header,security,entry,image,window);
+                imports,formatFound,encryption,compression,header,security,entry,image,window,
+                firstBlock,peSize,load,keyPresent,securityValid,hashPresent);
     }
 
     private static XexMetadata empty(boolean valid) {
         return new XexMetadata(valid,false,"","","","",0,0,"",
-                new ArrayList<ImportLibrary>(),false,-1,-1,0,0,-1,-1,0);
+                new ArrayList<ImportLibrary>(),false,-1,-1,0,0,-1,-1,0,0,0,0,false,false,false);
     }
 
     private static List<ImportLibrary> parseImportLibraries(byte[] b,int offset) {
