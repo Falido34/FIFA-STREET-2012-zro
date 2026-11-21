@@ -49,7 +49,13 @@ public final class GameFolderInspector {
             if (!m.version.isEmpty()) report.append("Versão XEX: ").append(m.version).append(" / base ").append(m.baseVersion).append("\n");
             if (m.discCount > 0) report.append("Disco: ").append(m.discNumber).append(" de ").append(m.discCount).append("\n");
             report.append("Bibliotecas importadas: ").append(m.importLibraries.size()).append("\n");
-            for (String library : m.importLibraries) report.append("  - ").append(library).append("\n");
+            for (XexMetadata.ImportLibrary library : m.importLibraries) {
+                report.append("  - ").append(library.name)
+                      .append(" | imports: ").append(library.importCount)
+                      .append(" | versão: ").append(library.version)
+                      .append(" | mínima: ").append(library.minVersion).append("\n");
+            }
+            report.append("Ordinais individuais: disponíveis após extração/análise da imagem PE\n");
             if (!state.defaultSha256.isEmpty()) report.append("SHA-256 default.xex: ").append(state.defaultSha256).append("\n");
         }
         report.append("\nMódulos encontrados:\n");
