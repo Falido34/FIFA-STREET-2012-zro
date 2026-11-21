@@ -11,7 +11,12 @@ endif()
 
 add_library(fifastreet3 SHARED src/main.cpp)
 rexglue_setup_target(fifastreet3 GPU_PLUGINS xenos)
-target_include_directories(fifastreet3 PRIVATE src)
+target_include_directories(fifastreet3 PRIVATE
+    src
+    # ReXGlue public app headers include imgui.h, but rex::runtime does not
+    # propagate the imgui object target's include path to downstream apps.
+    "${REXSDK_DIR}/thirdparty/imgui"
+)
 target_compile_options(fifastreet3 PRIVATE -O2)
 if(TARGET fifastreet3_recomp)
     target_compile_options(fifastreet3_recomp PRIVATE -O2)
