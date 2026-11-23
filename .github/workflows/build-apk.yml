@@ -12,6 +12,11 @@ on:
       - '.github/workflows/build-apk.yml'
       - 'android/**'
       - 'patches/**'
+      - 'game-template/CMakeLists.txt'
+      - 'game-template/config/**'
+      - 'game-template/fifastreet_manifest.toml'
+      - 'game-template/generated/**'
+      - 'game-template/src/**'
       - 'app/src/**'
 
 permissions:
